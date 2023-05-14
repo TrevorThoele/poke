@@ -7,6 +7,9 @@
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 	<ItemGroup>
+	  <PackageReference Include="Microsoft.CodeAnalysis" Version="4.6.0-1.final" />
+	</ItemGroup>
+	<ItemGroup>
 	  <PackageReference Update="FSharp.Core" Version="7.0.300-beta.23127.2" />
 	</ItemGroup>
 </Project>
