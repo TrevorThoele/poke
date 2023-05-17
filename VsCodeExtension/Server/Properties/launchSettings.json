@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "CSharpLanguageServer": {
+    "Server": {
       "commandName": "Project"
     }
   }
