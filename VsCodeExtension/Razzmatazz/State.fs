@@ -81,15 +81,16 @@ let pullNextRequestMaybe requestQueue =
 
         (Some nextRequest, queueRemainder)
 
-let emptyServerState = { Settings = emptySettings
-                         ClientCapabilities = None
-                         Solution = None
-                         OpenDocVersions = Map.empty
-                         DecompiledMetadata = Map.empty
-                         LastRequestId = 0
-                         RunningRequests = Map.empty
-                         RequestQueue = []
-                         SolutionReloadPending = None }
+let emptyServerState = {
+    Settings = emptySettings
+    ClientCapabilities = None
+    Solution = None
+    OpenDocVersions = Map.empty
+    DecompiledMetadata = Map.empty
+    LastRequestId = 0
+    RunningRequests = Map.empty
+    RequestQueue = []
+    SolutionReloadPending = None }
 
 type ServerDocumentType =
      | UserDocument // user Document from solution, on disk
@@ -161,12 +162,13 @@ let processServerEvent (logMessage: AsyncLogFn) state postMsg msg: Async<ServerS
     | StartRequest (name, requestType, requestPriority, replyChannel) ->
         postMsg ProcessRequestQueue
 
-        let newRequest = { Id=state.LastRequestId+1
-                           Name=name
-                           Type=requestType
-                           Semaphore=new SemaphoreSlim(0, 1)
-                           Priority=requestPriority
-                           Enqueued=DateTime.Now }
+        let newRequest = {
+            Id=state.LastRequestId+1
+            Name=name
+            Type=requestType
+            Semaphore=new SemaphoreSlim(0, 1)
+            Priority=requestPriority
+            Enqueued=DateTime.Now }
 
         replyChannel.Reply((newRequest.Id, newRequest.Semaphore))
 
@@ -189,10 +191,8 @@ let processServerEvent (logMessage: AsyncLogFn) state postMsg msg: Async<ServerS
             |> Seq.map (fun kv -> kv.Value)
             |> Seq.tryFind (fun r -> r.Type = ReadWrite)
 
-        // let numRunningRequests = state.RunningRequests |> Map.count
-
         let canRunNextRequest =
-            (Option.isNone runningRWRequestMaybe) // && (numRunningRequests < 4)
+            (Option.isNone runningRWRequestMaybe)
 
         return
             if not canRunNextRequest then
@@ -340,10 +340,11 @@ type ServerRequestScope (requestId: int, state: ServerState, emitServerEvent, lo
                 | None ->
                     let (documentFromMd, text) = makeDocumentFromMetadata compilation project l fullName
 
-                    let csharpMetadata = { ProjectName = project.Name
-                                           AssemblyName = l.MetadataModule.ContainingAssembly.Name
-                                           SymbolName = fullName
-                                           Source = text }
+                    let csharpMetadata = {
+                        ProjectName = project.Name
+                        AssemblyName = l.MetadataModule.ContainingAssembly.Name
+                        SymbolName = fullName
+                        Source = text }
                     (documentFromMd, [
                         DecompiledMetadataAdd (uri, { Metadata = csharpMetadata; Document = documentFromMd })])
 

@@ -588,7 +588,7 @@ let handleCodeLensResolve(data: Data<CodeLens>): AsyncLspResult<CodeLens> = asyn
     return { data.Parameters with Command=Some command } |> success
 }
 
-let handleTextDocumentDefinition(data: Data<Types.TextDocumentPositionParams>) : AsyncLspResult<Types.GotoResult option> = async {
+let handleTextDocumentDefinition(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.GotoResult option> = async {
     let docMaybe = data.Scope.GetAnyDocumentForUri data.Parameters.TextDocument.Uri
 
     return!
@@ -1710,5 +1710,4 @@ let start options =
         int result
     with
     | _ex ->
-        // logger.error (Log.setMessage "Start - LSP mode crashed" >> Log.addExn ex)
         3
