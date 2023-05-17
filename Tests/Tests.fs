@@ -15,11 +15,11 @@ namespace HelloWorld
 {
     class Program
     {
-        static string zecksString = "zecks-string";
+        static string staticString = "zecks-string";
 
         static void Main(string[] args)
         {
-            zecksString = "different";
+            staticString = "different";
             var output = $"Hello, World!";
             Console.WriteLine(output);
         }
@@ -50,7 +50,7 @@ let ``variables retrieves correct variables`` () =
     variables.Should().BeEquivalentTo(
         [
             "output";
-            "zecksString"
+            "staticString"
         ],
         "",
         []) |> ignore
@@ -65,7 +65,7 @@ let ``assignments retrieves correct assignments`` () =
     variables.Should().BeEquivalentTo(
         [
             "output";
-            "zecksString"
+            "staticString"
         ],
         "",
         []) |> ignore
@@ -98,7 +98,7 @@ let ``accessedExternalVariables retrieves external variable access`` () =
 
     accessedExternalVariables.Should().BeEquivalentTo(
         [
-            "zecksString"
+            "staticString"
         ],
         "",
         []) |> ignore
