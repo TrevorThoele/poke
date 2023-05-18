@@ -1,0 +1,41 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "activationEvents": ["onLanguage:plaintext"],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.78.0",
+    "@types/node": "^20.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.6",
+    "@typescript-eslint/parser": "^5.59.6",
+    "eslint": "^8.40.0",
+    "typescript": "^5.0.4"
+  },
+  "configuration": {
+    "type": "object",
+    "title": "Example configuration",
+    "properties": {
+      "languageServerExample.maxNumberOfProblems": {
+        "scope": "resource",
+        "type": "number",
+        "default": 100,
+        "description": "Controls the maximum number of problems produced by the server."
+      }
+    }
+  },
+  "engines": {
+    "vscode": "^1.70.2"
+  }
+}

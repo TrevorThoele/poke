@@ -4,6 +4,10 @@ open System
 open Ionide.LanguageServerProtocol
 open Ionide.LanguageServerProtocol.Server
 open Ionide.LanguageServerProtocol.Types
+open System.Diagnostics
+open System.Threading
+
+let success = LspResult.success
 
 type CSharpMetadataParams = {
     TextDocument: TextDocumentIdentifier
@@ -53,7 +57,7 @@ type Data<'TParameters> = {
 }
 
 let initialize(data: Data<InitializeParams>): AsyncLspResult<InitializeResult> = async {
-    return LspResult.Ok(InitializeResult.Default)
+    return InitializeResult.Default |> success
 }
 
 let initialized(data: Data<InitializedParams>): Async<LspResult<unit>> = async {
