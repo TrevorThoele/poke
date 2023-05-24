@@ -4,10 +4,6 @@ open System
 open Ionide.LanguageServerProtocol
 open Ionide.LanguageServerProtocol.Server
 open Ionide.LanguageServerProtocol.Types
-open System.Diagnostics
-open System.Threading
-
-let success = LspResult.success
 
 type CSharpMetadataParams = {
     TextDocument: TextDocumentIdentifier
@@ -57,7 +53,7 @@ type Data<'TParameters> = {
 }
 
 let initialize(data: Data<InitializeParams>): AsyncLspResult<InitializeResult> = async {
-    return InitializeResult.Default |> success
+    return LspResult.Ok(InitializeResult.Default)
 }
 
 let initialized(data: Data<InitializedParams>): Async<LspResult<unit>> = async {
@@ -203,60 +199,54 @@ let textDocumentOnTypeFormatting(data: Data<DocumentOnTypeFormattingParams>): As
 }
 
 let setupEndpoints(lspClient: LspClient) =
-    let handleRequest nameAndAsyncFn =
-        let requestName = nameAndAsyncFn |> fst
-        let asyncFn = nameAndAsyncFn |> snd
-
-        let requestHandler param = async {
-            System.Console.Write(param |> string)
-            return! asyncFn param
+    let handleRequest(requestName, func) =
+        let requestHandler parameters = async {
+            System.Console.Write(parameters |> string)
+            return! func({
+                Parameters = parameters;
+                LspClient = lspClient
+            })
         }
 
-        (requestName, requestHandler |> requestHandling)
-
-    let on(func: (Data<'T>) -> AsyncLspResult<'U>): ('T -> Async<LspResult<'U>>) = fun (parameters: 'T) ->
-        func({
-            Parameters = parameters;
-            LspClient = lspClient
-        })
+        (requestName, requestHandling(requestHandler))
 
     [
-        ("initialize"                       , on(initialize))                       |> handleRequest
-        ("initialized"                      , on(initialized))                      |> handleRequest
-        ("textDocument/didOpen"             , on(textDocumentDidOpen))              |> handleRequest
-        ("textDocument/didChange"           , on(textDocumentDidChange))            |> handleRequest
-        ("textDocument/didClose"            , on(textDocumentDidClose))             |> handleRequest
-        ("textDocument/didSave"             , on(textDocumentDidSave))              |> handleRequest
-        ("textDocument/codeAction"          , on(textDocumentCodeAction))           |> handleRequest
-        ("codeAction/resolve"               , on(codeActionResolve))                |> handleRequest
-        ("textDocument/codeLens"            , on(textDocumentCodeLens))             |> handleRequest
-        ("codeLens/resolve"                 , on(codeLensResolve))                  |> handleRequest
-        ("textDocument/completion"          , on(textDocumentCompletion))           |> handleRequest
-        ("textDocument/definition"          , on(textDocumentDefinition))           |> handleRequest
-        ("textDocument/documentHighlight"   , on(textDocumentDocumentHighlight))    |> handleRequest
-        ("textDocument/documentSymbol"      , on(textDocumentDocumentSymbol))       |> handleRequest
-        ("textDocument/hover"               , on(textDocumentHover))                |> handleRequest
-        ("textDocument/implementation"      , on(textDocumentImplementation))       |> handleRequest
-        ("textDocument/formatting"          , on(textDocumentFormatting))           |> handleRequest
-        ("textDocument/onTypeFormatting"    , on(textDocumentOnTypeFormatting))     |> handleRequest
-        ("textDocument/rangeFormatting"     , on(textDocumentRangeFormatting))      |> handleRequest
-        ("textDocument/references"          , on(textDocumentReferences))           |> handleRequest
-        ("textDocument/prepareRename"       , on(textDocumentPrepareRename))        |> handleRequest
-        ("textDocument/rename"              , on(textDocumentRename))               |> handleRequest
-        ("textDocument/signatureHelp"       , on(textDocumentSignatureHelp))        |> handleRequest
-        ("textDocument/semanticTokens/full" , on(semanticTokensFull))               |> handleRequest
-        ("textDocument/semanticTokens/range", on(semanticTokensRange))              |> handleRequest
-        ("textDocument/inlayHint"           , on(textDocumentInlayHint))            |> handleRequest
-        ("textDocument/prepareTypeHierarchy", on(textDocumentPrepareTypeHierarchy)) |> handleRequest
-        ("typeHierarchy/supertypes"         , on(typeHierarchySupertypes))          |> handleRequest
-        ("typeHierarchy/subtypes"           , on(typeHierarchySubtypes))            |> handleRequest
-        ("textDocument/prepareCallHierarchy", on(textDocumentPrepareCallHierarchy)) |> handleRequest
-        ("callHierarchy/incomingCalls"      , on(callHierarchyIncomingCalls))       |> handleRequest
-        ("callHierarchy/outgoingCalls"      , on(callHierarchyOutgoingCalls))       |> handleRequest
-        ("workspace/symbol"                 , on(workspaceSymbol))                  |> handleRequest
-        ("workspace/didChangeWatchedFiles"  , on(workspaceDidChangeWatchedFiles))   |> handleRequest
-        ("workspace/didChangeConfiguration" , on(workspaceDidChangeConfiguration))  |> handleRequest
-        ("csharp/metadata"                  , on(cSharpMetadata))                   |> handleRequest
+        handleRequest("initialize", initialize)
+        handleRequest("initialized", initialized)
+        handleRequest("textDocument/didOpen", textDocumentDidOpen)
+        handleRequest("textDocument/didChange", textDocumentDidChange)
+        handleRequest("textDocument/didClose", textDocumentDidClose)
+        handleRequest("textDocument/didSave", textDocumentDidSave)
+        handleRequest("textDocument/codeAction", textDocumentCodeAction)
+        handleRequest("codeAction/resolve", codeActionResolve)
+        handleRequest("textDocument/codeLens", textDocumentCodeLens)
+        handleRequest("codeLens/resolve", codeLensResolve)
+        handleRequest("textDocument/completion", textDocumentCompletion)
+        handleRequest("textDocument/definition", textDocumentDefinition)
+        handleRequest("textDocument/documentHighlight", textDocumentDocumentHighlight)
+        handleRequest("textDocument/documentSymbol", textDocumentDocumentSymbol)
+        handleRequest("textDocument/hover", textDocumentHover)
+        handleRequest("textDocument/implementation", textDocumentImplementation)
+        handleRequest("textDocument/formatting", textDocumentFormatting)
+        handleRequest("textDocument/onTypeFormatting", textDocumentOnTypeFormatting)
+        handleRequest("textDocument/rangeFormatting", textDocumentRangeFormatting)
+        handleRequest("textDocument/references", textDocumentReferences)
+        handleRequest("textDocument/prepareRename", textDocumentPrepareRename)
+        handleRequest("textDocument/rename", textDocumentRename)
+        handleRequest("textDocument/signatureHelp", textDocumentSignatureHelp)
+        handleRequest("textDocument/semanticTokens/full", semanticTokensFull)
+        handleRequest("textDocument/semanticTokens/range", semanticTokensRange)
+        handleRequest("textDocument/inlayHint", textDocumentInlayHint)
+        handleRequest("textDocument/prepareTypeHierarchy", textDocumentPrepareTypeHierarchy)
+        handleRequest("typeHierarchy/supertypes", typeHierarchySupertypes)
+        handleRequest("typeHierarchy/subtypes", typeHierarchySubtypes)
+        handleRequest("textDocument/prepareCallHierarchy", textDocumentPrepareCallHierarchy)
+        handleRequest("callHierarchy/incomingCalls", callHierarchyIncomingCalls)
+        handleRequest("callHierarchy/outgoingCalls", callHierarchyOutgoingCalls)
+        handleRequest("workspace/symbol", workspaceSymbol)
+        handleRequest("workspace/didChangeWatchedFiles", workspaceDidChangeWatchedFiles)
+        handleRequest("workspace/didChangeConfiguration", workspaceDidChangeConfiguration)
+        handleRequest("csharp/metadata", cSharpMetadata)
     ]
     |> Map.ofList
 
