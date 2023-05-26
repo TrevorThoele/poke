@@ -1,9 +1,13 @@
 module CSharpLanguageServer.Server
 
 open System
+open System.Diagnostics
+open System.Threading
 open Ionide.LanguageServerProtocol
 open Ionide.LanguageServerProtocol.Server
 open Ionide.LanguageServerProtocol.Types
+open Newtonsoft.Json
+open Microsoft.CodeAnalysis.Classification
 
 type CSharpMetadataParams = {
     TextDocument: TextDocumentIdentifier
@@ -52,8 +56,116 @@ type Data<'TParameters> = {
     LspClient: LspClient
 }
 
+let ClassificationTypeMap = Map [
+    (ClassificationTypeNames.ClassName,             "class");
+    (ClassificationTypeNames.Comment,               "comment");
+    (ClassificationTypeNames.ConstantName,          "property");
+    (ClassificationTypeNames.ControlKeyword,        "keyword");
+    (ClassificationTypeNames.DelegateName,          "class");
+    (ClassificationTypeNames.EnumMemberName,        "enumMember");
+    (ClassificationTypeNames.EnumName,              "enum");
+    (ClassificationTypeNames.EventName,             "event");
+    (ClassificationTypeNames.ExtensionMethodName,   "method");
+    (ClassificationTypeNames.FieldName,             "property");
+    (ClassificationTypeNames.Identifier,            "variable");
+    (ClassificationTypeNames.InterfaceName,         "interface");
+    (ClassificationTypeNames.LabelName,             "variable");
+    (ClassificationTypeNames.LocalName,             "variable");
+    (ClassificationTypeNames.Keyword,               "keyword");
+    (ClassificationTypeNames.MethodName,            "method");
+    (ClassificationTypeNames.NamespaceName,         "namespace");
+    (ClassificationTypeNames.NumericLiteral,        "number");
+    (ClassificationTypeNames.Operator,              "operator");
+    (ClassificationTypeNames.OperatorOverloaded,    "operator");
+    (ClassificationTypeNames.ParameterName,         "parameter");
+    (ClassificationTypeNames.PropertyName,          "property");
+    (ClassificationTypeNames.RecordClassName,       "class");
+    (ClassificationTypeNames.RecordStructName,      "struct");
+    (ClassificationTypeNames.RegexText,             "regex");
+    (ClassificationTypeNames.StringLiteral,         "string");
+    (ClassificationTypeNames.StructName,            "struct");
+    (ClassificationTypeNames.TypeParameterName,     "typeParameter");
+    (ClassificationTypeNames.VerbatimStringLiteral, "string")
+]
+
+let flip f x y = f y x
+
+let SemanticTokenTypeMap =
+    ClassificationTypeMap
+    |> Map.values
+    |> Seq.distinct
+    |> flip Seq.zip (Seq.initInfinite uint32)
+    |> Map.ofSeq
+
+let SemanticTokenTypes =
+    SemanticTokenTypeMap
+    |> Seq.sortBy (fun kvp -> kvp.Value)
+    |> Seq.map (fun kvp -> kvp.Key)
+
+let ClassificationModifierMap = Map [
+    (ClassificationTypeNames.StaticSymbol, "static")
+]
+
+let SemanticTokenModifierMap =
+    ClassificationModifierMap
+    |> Map.values
+    |> Seq.distinct
+    |> flip Seq.zip (Seq.initInfinite uint32)
+    |> Map.ofSeq
+
+let SemanticTokenModifiers =
+    SemanticTokenModifierMap
+    |> Seq.sortBy (fun kvp -> kvp.Value)
+    |> Seq.map (fun kvp -> kvp.Key)
+
 let initialize(data: Data<InitializeParams>): AsyncLspResult<InitializeResult> = async {
-    return LspResult.Ok(InitializeResult.Default)
+    return LspResult.Ok({
+        InitializeResult.Default with
+            Capabilities = {
+                ServerCapabilities.Default with
+                    HoverProvider = Some true
+                    RenameProvider = true |> First |> Some
+                    DefinitionProvider = Some true
+                    TypeDefinitionProvider = None
+                    ImplementationProvider = Some true
+                    ReferencesProvider = Some true
+                    DocumentHighlightProvider = Some true
+                    DocumentSymbolProvider = Some true
+                    WorkspaceSymbolProvider = Some true
+                    DocumentFormattingProvider = Some true
+                    DocumentRangeFormattingProvider = Some true
+                    DocumentOnTypeFormattingProvider = Some {
+                        FirstTriggerCharacter = ';'
+                        MoreTriggerCharacter = Some([| '}'; ')' |]) }
+                    SignatureHelpProvider = Some {
+                        TriggerCharacters = Some([| '('; ','; '<'; '{'; '[' |])
+                        RetriggerCharacters = None }
+                    CompletionProvider = Some {
+                        ResolveProvider = None
+                        TriggerCharacters = Some ([| '.'; '''; |])
+                        AllCommitCharacters = None }
+                    CodeLensProvider = Some { ResolveProvider = Some true }
+                    CodeActionProvider = Some {
+                        CodeActionKinds = None
+                        ResolveProvider = Some true }
+                    TextDocumentSync = Some {
+                        TextDocumentSyncOptions.Default with
+                            OpenClose = Some true
+                            Save = Some { IncludeText = Some true }
+                            Change = Some TextDocumentSyncKind.Incremental }
+                    FoldingRangeProvider = None
+                    SelectionRangeProvider = None
+                    SemanticTokensProvider = Some {
+                        Legend = {
+                            TokenTypes = SemanticTokenTypes |> Seq.toArray
+                            TokenModifiers = SemanticTokenModifiers |> Seq.toArray }
+                        Range = Some true
+                        Full = true |> First |> Some }
+                    InlayHintProvider = Some { ResolveProvider = Some false }
+                    TypeHierarchyProvider = Some true
+                    CallHierarchyProvider = Some true
+        }
+    })
 }
 
 let initialized(data: Data<InitializedParams>): Async<LspResult<unit>> = async {
@@ -115,7 +227,10 @@ let textDocumentDocumentSymbol(data: Data<Types.DocumentSymbolParams>): AsyncLsp
 }
 
 let textDocumentHover(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.Hover option> = async {
-    return LspResult.Ok(None)
+    return LspResult.Ok(Some {
+        Contents = "Hello world" |> MarkedString.String |> HoverContent.MarkedString
+        Range = None
+    })
 }
 
 let textDocumentReferences(data: Data<Types.ReferenceParams>): AsyncLspResult<Types.Location[] option> = async {
@@ -201,13 +316,16 @@ let textDocumentOnTypeFormatting(data: Data<DocumentOnTypeFormattingParams>): As
 let setupEndpoints(lspClient: LspClient) =
     let handleRequest(requestName, func) =
         let requestHandler parameters = async {
-            System.Console.Write(parameters |> string)
+            let test = requestName
+            Console.Write(parameters |> string)
+            let test2 = JsonConvert.SerializeObject(parameters)
             return! func({
                 Parameters = parameters;
                 LspClient = lspClient
             })
         }
-
+        
+        (*while (not Debugger.IsAttached) do Thread.Sleep(100)*)
         (requestName, requestHandling(requestHandler))
 
     [

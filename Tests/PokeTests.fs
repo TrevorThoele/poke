@@ -1,4 +1,4 @@
-module Tests
+module PokeTests
 
 open Xunit
 open Program

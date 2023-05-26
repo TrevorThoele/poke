@@ -28,3 +28,9 @@ let accessedExternalVariables(node: SyntaxNode, model: SemanticModel) =
         |> Seq.filter(fun x -> x.Symbol <> null)
         |> Seq.map(fun x -> x.Symbol)
         |> Seq.filter(fun x -> not (locals |> Seq.exists(fun y -> y.Equals(x))))
+
+let stateSpace(object: obj): int =
+    match object with
+        | :? bool -> 2
+        | :? int -> System.Int32.MaxValue - System.Int32.MinValue
+        | _ -> 0

@@ -41,11 +41,10 @@ const errorHandler = {
     }
 };
 function activate(context) {
-    const dllPath = context.asAbsolutePath(path.join('../', 'Server', 'bin', 'Debug', 'net6.0', 'Server.dll'));
-    const command = 'dotnet';
+    const command = context.asAbsolutePath(path.join('../', 'Server', 'bin', 'Debug', 'net6.0', 'Server.exe'));
     const executable = {
         command,
-        args: [dllPath]
+        args: []
     };
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
