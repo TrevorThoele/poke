@@ -5,6 +5,7 @@ open Program
 open FluentAssertions
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis
+open System
 
 let testProgram = """using System;
 using System.Collections;
@@ -100,5 +101,48 @@ let ``accessedExternalVariables retrieves external variable access`` () =
         [
             "staticString"
         ],
+        "",
+        []) |> ignore
+
+let declaredStateSpaceScenarios: obj [] list =
+    [
+        [|typeof<bool>; bigint(2)|]
+        [|typeof<char>; bigint(256)|]
+        [|typeof<sbyte>; bigint(256)|]
+        [|typeof<byte>; bigint(256)|]
+        [|typeof<int16>; bigint(65536)|]
+        [|typeof<uint16>; bigint(65536)|]
+        [|typeof<int>; bigint.Parse("4294967296")|]
+        [|typeof<uint>; bigint.Parse("4294967296")|]
+        [|typeof<single>; bigint.Parse("4294967296")|]
+        [|typeof<int64>; bigint.Parse("18446744073709551616")|]
+        [|typeof<uint64>; bigint.Parse("18446744073709551616")|]
+        [|typeof<double>; bigint.Parse("18446744073709551616")|]
+        [|typeof<decimal>; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|typeof<nativeint>; bigint(Math.Pow(256, IntPtr.Size))|]
+        [|typeof<unativeint>; bigint(Math.Pow(256, IntPtr.Size))|]
+        [|typeof<unit>; bigint(1)|]
+    ]
+
+[<Theory>]
+[<MemberData(nameof(declaredStateSpaceScenarios))>]
+let ``type has correct stateSpace`` (value: Type, expectedResult: bigint) =
+    let result = declaredStateSpace(value)
+    result.Should().Be(expectedResult, "", [])
+
+[<Fact>]
+let ``function has correct domain`` () =
+    let syntaxTree = CSharpSyntaxTree.ParseText(testProgram)
+    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
+    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
+    let model = compilation.GetSemanticModel(syntaxTree, false)
+    let root = model.SyntaxTree.GetCompilationUnitRoot()
+
+    let mainMethod = (methods(root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "Main"))
+    let functionStateSpace = functionStateSpace(mainMethod, model)
+
+    "1".Should().Be(
+        "1",
         "",
         []) |> ignore

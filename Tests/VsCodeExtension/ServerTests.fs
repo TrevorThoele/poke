@@ -1,68 +1,123 @@
 ﻿module ServerTests
 
-open Xunit
+open CSharpLanguageServer
 open FluentAssertions
-open System
-open System.Diagnostics
 open System.IO
+open System.IO.Pipes
+open System.Threading
+open Xunit
 
-(*
-let parseUntilResponse<'T>(reader: StreamReader, totalOutput: string) =
-    let output = reader.ReadLine()
-    if output.Contains("Content-Length")
+let requestWithContentLength(request: string) =
+    @$"Content-Length: {request.Length}
 
-let parseUntilResponse<'T>(reader: StreamReader) =
-    parseUntilResponse(reader, "")
-    *)
-
-[<Fact>]
-let ``server responds with data when requesting textDocument/documentSymbol`` () =
-    let server = new Process(StartInfo = ProcessStartInfo(
-        CreateNoWindow = true,
-        RedirectStandardInput = true,
-        RedirectStandardOutput = true,
-        UseShellExecute = false,
-        FileName = $"{Environment.CurrentDirectory}/Server.exe"))
-    let started = server.Start()
-    if not started then
-        Assert.Fail("Server not started")
-
-    (*{""jsonrpc"":""2.0"",""method"":""textDocument/documentSymbol"",""params"":{""textDocument"":{""uri"":""source://src/main/scala/Address.scala""}},""id"":10}*)
-    (*{ ""jsonrpc"":""2.0"", ""method"": ""textDocument/documentSymbol"", ""id"":1 }*)
-    let command = @"{ ""jsonrpc"":""2.0"", ""method"": ""textDocument/documentSymbol"", ""id"":1 }"
-    let contentLength = command.Length
-
-    server.StandardInput.Write(@$"Content-Length: {contentLength}
-
-{command}")
-
-    let chars: char array = Array.zeroCreate 10
-    let test = server.StandardOutput.Read(chars, 0, 10)
-
-    let output = server.StandardOutput.ReadLine()
-    output.Should().Be(@"{ TextDocument = { Uri = ""source://src/main/scala/Address.scala"" } }Content-Length: 39", "", []) |> ignore
+{request}"
 
 [<Fact>]
-let ``server responds with data when requesting textDocument/hover`` () =
-    let server = new Process(StartInfo = ProcessStartInfo(
-        CreateNoWindow = true,
-        RedirectStandardInput = true,
-        RedirectStandardOutput = true,
-        UseShellExecute = false,
-        FileName = $"{Environment.CurrentDirectory}/Server.exe"))
-    let started = server.Start()
-    if not started then
-        Assert.Fail("Server not started")
-        
-    let command = @"{""jsonrpc"":""2.0"",""method"":""textDocument/hover"",""params"":{""position"":{""line"":0,""character"":0},""textDocument"":{""uri"":""source://src/main/scala/Address.scala""}},""id"":10}"
-    let contentLength = command.Length
+let ``server responds with data when requesting initialize`` () = async {
+    use inputServerPipe = new AnonymousPipeServerStream()
+    use inputClientPipe = new AnonymousPipeClientStream(inputServerPipe.GetClientHandleAsString())
 
-    server.StandardInput.Write(@$"Content-Length: {contentLength}
+    use outputServerPipe = new AnonymousPipeServerStream()
+    use outputClientPipe = new AnonymousPipeClientStream(outputServerPipe.GetClientHandleAsString())
 
-{command}")
+    use inputWriter = new StreamWriter(inputServerPipe)
+    inputWriter.AutoFlush <- true
+    use outputReader = new StreamReader(outputClientPipe)
+    let server = async {
+        let result = Server.start(inputClientPipe, outputServerPipe)
+        if result <> 2 then
+            Assert.Fail("Server startup failed")
+    }
 
-    let mutable output = ""
+    let! serverAsync = Async.StartChild(server, 1000)
 
-    while (not server.StandardOutput.EndOfStream) do output <- output + (server.StandardOutput.Read() |> char).ToString()
+    Thread.Sleep(1000)
 
-    output.Should().Be(@"{ TextDocument = { Uri = ""source://src/main/scala/Address.scala"" }", "", []) |> ignore
+    inputWriter.Write(requestWithContentLength(Requests.initialize))
+
+    let contentLengthLine = outputReader.ReadLine()
+    let contentLength = int(contentLengthLine.Replace("Content-Length: ", ""))
+    outputReader.ReadLine() |> ignore
+
+    let contentChars: char array = Array.zeroCreate contentLength
+    outputReader.Read(contentChars, 0, contentLength) |> ignore
+    
+    let output = new System.String(contentChars)
+    output.Should().Be(@"{""jsonrpc"":""2.0"",""id"":1,""error"":{""code"":-32602,""message"":""Unable to find method 'textDocument/documentSymbol/0' on {no object} for the following reasons: An argument was not supplied for a required parameter.""}}", "", []) |> ignore
+    
+    inputWriter.Write(requestWithContentLength(Requests.shutdown))
+
+    do! serverAsync
+}
+
+[<Fact>]
+let ``server responds with data when requesting textDocument/documentSymbol`` () = async {
+    use inputServerPipe = new AnonymousPipeServerStream()
+    use inputClientPipe = new AnonymousPipeClientStream(inputServerPipe.GetClientHandleAsString())
+
+    use outputServerPipe = new AnonymousPipeServerStream()
+    use outputClientPipe = new AnonymousPipeClientStream(outputServerPipe.GetClientHandleAsString())
+
+    use inputWriter = new StreamWriter(inputServerPipe)
+    inputWriter.AutoFlush <- true
+    use outputReader = new StreamReader(outputClientPipe)
+    let server = async {
+        let result = Server.start(inputClientPipe, outputServerPipe)
+        if result <> 2 then
+            Assert.Fail("Server startup failed")
+    }
+
+    let! serverAsync = Async.StartChild(server)
+
+    inputWriter.Write(requestWithContentLength(Requests.textDocumentDocumentSymbol))
+
+    let contentLengthLine = outputReader.ReadLine()
+    let contentLength = int(contentLengthLine.Replace("Content-Length: ", ""))
+    outputReader.ReadLine() |> ignore
+
+    let contentChars: char array = Array.zeroCreate contentLength
+    outputReader.Read(contentChars, 0, contentLength) |> ignore
+    
+    let output = new System.String(contentChars)
+    output.Should().Be(@"{""jsonrpc"":""2.0"",""id"":1,""error"":{""code"":-32602,""message"":""Unable to find method 'textDocument/documentSymbol/0' on {no object} for the following reasons: An argument was not supplied for a required parameter.""}}", "", []) |> ignore
+
+    inputWriter.Write(requestWithContentLength(Requests.shutdown))
+
+    do! serverAsync
+}
+
+[<Fact>]
+let ``server responds with data when requesting textDocument/hover`` () = async {
+    use inputServerPipe = new AnonymousPipeServerStream()
+    use inputClientPipe = new AnonymousPipeClientStream(inputServerPipe.GetClientHandleAsString())
+
+    use outputServerPipe = new AnonymousPipeServerStream()
+    use outputClientPipe = new AnonymousPipeClientStream(outputServerPipe.GetClientHandleAsString())
+
+    use inputWriter = new StreamWriter(inputServerPipe)
+    inputWriter.AutoFlush <- true
+    use outputReader = new StreamReader(outputClientPipe)
+    let server = async {
+        let result = Server.start(inputClientPipe, outputServerPipe)
+        if result <> 2 then
+            Assert.Fail("Server startup failed")
+    }
+
+    let! serverAsync = Async.StartChild(server, 1000)
+
+    inputWriter.Write(requestWithContentLength(Requests.textDocumentHover))
+
+    let contentLengthLine = outputReader.ReadLine()
+    let contentLength = int(contentLengthLine.Replace("Content-Length: ", ""))
+    outputReader.ReadLine() |> ignore
+
+    let contentChars: char array = Array.zeroCreate contentLength
+    outputReader.Read(contentChars, 0, contentLength) |> ignore
+    
+    let output = new System.String(contentChars)
+    output.Should().Be(@"{""jsonrpc"":""2.0"",""id"":10,""result"":{""contents"":""Hello world""}}", "", []) |> ignore
+
+    inputWriter.Write(requestWithContentLength(Requests.shutdown))
+
+    do! serverAsync
+}

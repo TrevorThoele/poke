@@ -316,16 +316,13 @@ let textDocumentOnTypeFormatting(data: Data<DocumentOnTypeFormattingParams>): As
 let setupEndpoints(lspClient: LspClient) =
     let handleRequest(requestName, func) =
         let requestHandler parameters = async {
-            let test = requestName
-            Console.Write(parameters |> string)
-            let test2 = JsonConvert.SerializeObject(parameters)
-            return! func({
+            let! test = func({
                 Parameters = parameters;
                 LspClient = lspClient
             })
+            return test
         }
-        
-        (*while (not Debugger.IsAttached) do Thread.Sleep(100)*)
+
         (requestName, requestHandling(requestHandler))
 
     [
@@ -368,20 +365,15 @@ let setupEndpoints(lspClient: LspClient) =
     ]
     |> Map.ofList
 
-let startCore =
-    use input = Console.OpenStandardInput()
-    use output = Console.OpenStandardOutput()
-
-    Ionide.LanguageServerProtocol.Server.startWithSetup
-        setupEndpoints
-        input
-        output
-        CSharpLspClient
-        defaultRpc
-
-let start() =
+let start(input: IO.Stream, output: IO.Stream) =
     try
-        let result = startCore
+        let result = (Ionide.LanguageServerProtocol.Server.startWithSetup
+            setupEndpoints
+            input
+            output
+            CSharpLspClient
+            defaultRpc)
+
         int result
     with
     | _ex ->
