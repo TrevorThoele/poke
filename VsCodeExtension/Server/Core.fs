@@ -1,12 +1,9 @@
 module CSharpLanguageServer.Server
 
 open System
-open System.Diagnostics
-open System.Threading
 open Ionide.LanguageServerProtocol
 open Ionide.LanguageServerProtocol.Server
 open Ionide.LanguageServerProtocol.Types
-open Newtonsoft.Json
 open Microsoft.CodeAnalysis.Classification
 
 type CSharpMetadataParams = {

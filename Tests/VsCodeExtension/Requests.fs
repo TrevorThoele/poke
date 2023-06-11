@@ -488,3 +488,5 @@ let textDocumentDocumentSymbol = @"{ ""jsonrpc"":""2.0"", ""method"": ""textDocu
 let textDocumentHover = @"{""jsonrpc"":""2.0"",""method"":""textDocument/hover"",""params"":{""position"":{""line"":0,""character"":0},""textDocument"":{""uri"":""source://src/main/scala/Address.scala""}},""id"":10}"
 
 let shutdown = @"{""jsonrpc"":""2.0"",""method"":""shutdown"",""id"":1}"
+
+let exit = @"{""jsonrpc"":""2.0"",""method"":""exit"",""id"":1}"

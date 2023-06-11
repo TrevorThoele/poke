@@ -13,6 +13,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Server", "VsCodeExtension\S
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Client", "VsCodeExtension\Client\Client.esproj", "{D3F8FA8A-DBE9-4194-BD4A-55BD3228E665}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ionide.LanguageServerProtocol", "VsCodeExtension\LanguageServerProtocol\src\Ionide.LanguageServerProtocol.fsproj", "{277CBFA3-6B7F-4119-80FE-1AFFC988659F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,18 @@ Global
 		{D3F8FA8A-DBE9-4194-BD4A-55BD3228E665}.Release|x86.ActiveCfg = Release|Any CPU
 		{D3F8FA8A-DBE9-4194-BD4A-55BD3228E665}.Release|x86.Build.0 = Release|Any CPU
 		{D3F8FA8A-DBE9-4194-BD4A-55BD3228E665}.Release|x86.Deploy.0 = Release|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Debug|arm64.ActiveCfg = Debug|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Debug|arm64.Build.0 = Debug|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Debug|x86.Build.0 = Debug|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Release|arm64.ActiveCfg = Release|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Release|arm64.Build.0 = Release|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Release|x86.ActiveCfg = Release|Any CPU
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,6 +98,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{902D9A24-4929-49FF-A831-8A7CB83CC828} = {6B799A37-8638-49BF-8B4D-F67A7CB945E9}
 		{D3F8FA8A-DBE9-4194-BD4A-55BD3228E665} = {6B799A37-8638-49BF-8B4D-F67A7CB945E9}
+		{277CBFA3-6B7F-4119-80FE-1AFFC988659F} = {6B799A37-8638-49BF-8B4D-F67A7CB945E9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7DCDC967-A707-46E8-9D0B-E338E7120872}
