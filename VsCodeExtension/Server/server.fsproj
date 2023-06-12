@@ -12,10 +12,20 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="Microsoft.Build" Version="17.3.2">
+	  <ExcludeAssets>runtime</ExcludeAssets>
+	</PackageReference>
+	<PackageReference Include="Microsoft.Build.Framework" Version="17.3.2">
+	  <ExcludeAssets>runtime</ExcludeAssets>
+	</PackageReference>
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.5.5" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.6.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\LanguageServerProtocol\src\Ionide.LanguageServerProtocol.fsproj" />
+    <ProjectReference Include="..\..\Project\poke.fsproj" />
   </ItemGroup>
 </Project>

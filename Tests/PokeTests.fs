@@ -1,7 +1,7 @@
 module PokeTests
 
 open Xunit
-open Program
+open poke.Program
 open FluentAssertions
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis
@@ -106,43 +106,64 @@ let ``accessedExternalVariables retrieves external variable access`` () =
 
 let declaredStateSpaceScenarios: obj [] list =
     [
-        [|typeof<bool>; bigint(2)|]
-        [|typeof<char>; bigint(256)|]
-        [|typeof<sbyte>; bigint(256)|]
-        [|typeof<byte>; bigint(256)|]
-        [|typeof<int16>; bigint(65536)|]
-        [|typeof<uint16>; bigint(65536)|]
-        [|typeof<int>; bigint.Parse("4294967296")|]
-        [|typeof<uint>; bigint.Parse("4294967296")|]
-        [|typeof<single>; bigint.Parse("4294967296")|]
-        [|typeof<int64>; bigint.Parse("18446744073709551616")|]
-        [|typeof<uint64>; bigint.Parse("18446744073709551616")|]
-        [|typeof<double>; bigint.Parse("18446744073709551616")|]
-        [|typeof<decimal>; bigint.Parse("340282366920938463463374607431768211456")|]
-        [|typeof<nativeint>; bigint(Math.Pow(256, IntPtr.Size))|]
-        [|typeof<unativeint>; bigint(Math.Pow(256, IntPtr.Size))|]
-        [|typeof<unit>; bigint(1)|]
+        [|"bool value"; bigint(2)|]
+        [|"char value"; bigint(256)|]
+        [|"sbyte value"; bigint(256)|]
+        [|"byte value"; bigint(256)|]
+        [|"short value"; bigint(65536)|]
+        [|"ushort value"; bigint(65536)|]
+        [|"int value"; bigint.Parse("4294967296")|]
+        [|"uint value"; bigint.Parse("4294967296")|]
+        [|"float value"; bigint.Parse("4294967296")|]
+        [|"long value"; bigint.Parse("18446744073709551616")|]
+        [|"ulong value"; bigint.Parse("18446744073709551616")|]
+        [|"double value"; bigint.Parse("18446744073709551616")|]
+        [|"decimal value"; bigint.Parse("340282366920938463463374607431768211456")|]
     ]
 
 [<Theory>]
 [<MemberData(nameof(declaredStateSpaceScenarios))>]
-let ``type has correct stateSpace`` (value: Type, expectedResult: bigint) =
-    let result = declaredStateSpace(value)
-    result.Should().Be(expectedResult, "", [])
-
-[<Fact>]
-let ``function has correct domain`` () =
-    let syntaxTree = CSharpSyntaxTree.ParseText(testProgram)
+let ``variable has correct stateSpace`` (text: string, expectedResult: bigint) =
+    let syntaxTree = CSharpSyntaxTree.ParseText(text)
     let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
     let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
     let model = compilation.GetSemanticModel(syntaxTree, false)
     let root = model.SyntaxTree.GetCompilationUnitRoot()
 
-    let mainMethod = (methods(root)
-        |> Seq.find(fun x -> x.Identifier.ToString() = "Main"))
+    let valueVariable = (variables(root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "value"))
+
+    let result = declaredStateSpace(model.GetDeclaredSymbol(valueVariable), model)
+    result.Should().Be(expectedResult, "", [])
+
+let functionStateSpaceScenarios: obj [] list =
+    [
+        [|"void MyFunction(bool value) {}"; bigint(2)|]
+        [|"void MyFunction(char value) {}"; bigint(256)|]
+        [|"void MyFunction(sbyte value) {}"; bigint(256)|]
+        [|"void MyFunction(byte value) {}"; bigint(256)|]
+        [|"void MyFunction(short value) {}"; bigint(65536)|]
+        [|"void MyFunction(ushort value) {}"; bigint(65536)|]
+        [|"void MyFunction(int value) {}"; bigint.Parse("4294967296")|]
+        [|"void MyFunction(uint value) {}"; bigint.Parse("4294967296")|]
+        [|"void MyFunction(float value) {}"; bigint.Parse("4294967296")|]
+        [|"void MyFunction(long value) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void MyFunction(ulong value) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void MyFunction(double value) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void MyFunction(decimal value) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
+    ]
+
+[<Theory>]
+[<MemberData(nameof(functionStateSpaceScenarios))>]
+let ``function has correct domain`` (text: string, expectedResult: bigint) =
+    let syntaxTree = CSharpSyntaxTree.ParseText(text)
+    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
+    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
+    let model = compilation.GetSemanticModel(syntaxTree, false)
+    let root = model.SyntaxTree.GetCompilationUnitRoot()
+
+    let mainMethod = (localFunctions(root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
     let functionStateSpace = functionStateSpace(mainMethod, model)
 
-    "1".Should().Be(
-        "1",
-        "",
-        []) |> ignore
+    functionStateSpace.Domain.Should().Be(expectedResult, "", []) |> ignore

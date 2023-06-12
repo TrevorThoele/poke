@@ -5,6 +5,11 @@ open Ionide.LanguageServerProtocol
 open Ionide.LanguageServerProtocol.Server
 open Ionide.LanguageServerProtocol.Types
 open Microsoft.CodeAnalysis.Classification
+open poke.Program
+open Microsoft.CodeAnalysis.MSBuild
+open Microsoft.CodeAnalysis.CSharp
+open Microsoft.CodeAnalysis
+open System.IO
 
 type CSharpMetadataParams = {
     TextDocument: TextDocumentIdentifier
@@ -47,6 +52,8 @@ type CSharpLspClient(sendServerNotification: ClientNotificationSender, sendServe
 
     override __.TextDocumentPublishDiagnostics(p) =
         sendServerNotification "textDocument/publishDiagnostics" (box p) |> Async.Ignore
+
+let mutable workspace: Workspace option = None
 
 type Data<'TParameters> = {
     Parameters: 'TParameters
@@ -116,6 +123,15 @@ let SemanticTokenModifiers =
     |> Seq.map (fun kvp -> kvp.Key)
 
 let initialize(data: Data<InitializeParams>): AsyncLspResult<InitializeResult> = async {
+    let mutable createdWorkspace: Workspace option = None
+    try
+        createdWorkspace <- Some(MSBuildWorkspace.Create())
+    with
+    | e -> 3
+    (*
+    let! _ = (createdWorkspace.OpenSolutionAsync($"{data.Parameters.RootPath}/Test.sln") |> Async.AwaitTask)
+    workspace <- Some(createdWorkspace)
+    *)
     return LspResult.Ok({
         InitializeResult.Default with
             Capabilities = {
@@ -224,8 +240,29 @@ let textDocumentDocumentSymbol(data: Data<Types.DocumentSymbolParams>): AsyncLsp
 }
 
 let textDocumentHover(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.Hover option> = async {
+    (*
+    let solution = workspace.Value.CurrentSolution
+    let documentId = (solution.GetDocumentIdsWithFilePath(data.Parameters.TextDocument.Uri)
+        |> Seq.tryHead)
+    let document = solution.GetDocument(documentId.Value)
+    let! sourceText = document.GetTextAsync() |> Async.AwaitTask
+    let text = sourceText.ToString()
+    *)
+    (*
+    let lines = File.ReadLines(data.Parameters.TextDocument.Uri)
+    let text = lines |> Seq.item(data.Parameters.Position.Line)
+    let syntaxTree = CSharpSyntaxTree.ParseText(text)
+    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
+    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
+    let model = compilation.GetSemanticModel(syntaxTree, false)
+    let root = model.SyntaxTree.GetCompilationUnitRoot()
+
+    let methods = methods(root)
+    let method = (localFunctions(root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
+    *)
     return LspResult.Ok(Some {
-        Contents = "Hello world" |> MarkedString.String |> HoverContent.MarkedString
+        Contents = data.Parameters.TextDocument.Uri.ToString() |> MarkedString.String |> HoverContent.MarkedString
         Range = None
     })
 }
@@ -313,11 +350,10 @@ let textDocumentOnTypeFormatting(data: Data<DocumentOnTypeFormattingParams>): As
 let setupEndpoints(lspClient: LspClient) =
     let handleRequest(requestName, func) =
         let requestHandler parameters = async {
-            let! test = func({
+            return! func({
                 Parameters = parameters;
                 LspClient = lspClient
             })
-            return test
         }
 
         (requestName, requestHandling(requestHandler))
