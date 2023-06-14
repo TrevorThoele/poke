@@ -26,4 +26,11 @@
 	<ItemGroup>
 	  <PackageReference Update="FSharp.Core" Version="7.0.300" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="VsCodeExtension/Solutions/**/*.*" Exclude="VsCodeExtension/Solutions/**/obj/**/*.*;VsCodeExtension/Solutions/**/bin/**/*.*">
+		<Link>Solutions/%(RecursiveDir)%(Filename)%(Extension)</Link>
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
 </Project>

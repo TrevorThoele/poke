@@ -1,22 +1,28 @@
 ﻿module Requests
 
-let initialize = @"{
+open System
+
+let initialize(solutionPath: string) =
+    let rootPath = solutionPath.Replace("\\", "\\\\")
+    let rootUri = (new Uri(rootPath)).AbsoluteUri
+
+    @$"{{
     ""jsonrpc"":""2.0"",
     ""method"": ""initialize"",
     ""id"":1,
-    ""params"": {
+    ""params"": {{
         ""processId"": 19920,
-        ""clientInfo"": {
+        ""clientInfo"": {{
             ""name"": ""Visual Studio Code"",
             ""version"": ""1.73.1""
-        },
+        }},
         ""locale"": ""en"",
-        ""rootPath"": ""c:\\Users\\Zechariah\\vscodetest"",
-        ""rootUri"": ""file:///c%3A/Users/Zechariah/vscodetest"",
-        ""capabilities"": {
-            ""workspace"": {
+        ""rootPath"": ""{rootPath}"",
+        ""rootUri"": ""{rootUri}"",
+        ""capabilities"": {{
+            ""workspace"": {{
                 ""applyEdit"": true,
-                ""workspaceEdit"": {
+                ""workspaceEdit"": {{
                     ""documentChanges"": true,
                     ""resourceOperations"": [
                         ""create"",
@@ -25,18 +31,18 @@ let initialize = @"{
                     ],
                     ""failureHandling"": ""textOnlyTransactional"",
                     ""normalizesLineEndings"": true,
-                    ""changeAnnotationSupport"": {
+                    ""changeAnnotationSupport"": {{
                         ""groupsOnLabel"": true
-                    }
-                },
+                    }}
+                }},
                 ""configuration"": true,
-                ""didChangeWatchedFiles"": {
+                ""didChangeWatchedFiles"": {{
                     ""dynamicRegistration"": true,
                     ""relativePatternSupport"": true
-                },
-                ""symbol"": {
+                }},
+                ""symbol"": {{
                     ""dynamicRegistration"": true,
-                    ""symbolKind"": {
+                    ""symbolKind"": {{
                         ""valueSet"": [
                             1,
                             2,
@@ -65,32 +71,32 @@ let initialize = @"{
                             25,
                             26
                         ]
-                    },
-                    ""tagSupport"": {
+                    }},
+                    ""tagSupport"": {{
                         ""valueSet"": [
                             1
                         ]
-                    },
-                    ""resolveSupport"": {
+                    }},
+                    ""resolveSupport"": {{
                         ""properties"": [
                             ""location.range""
                         ]
-                    }
-                },
-                ""codeLens"": {
+                    }}
+                }},
+                ""codeLens"": {{
                     ""refreshSupport"": true
-                },
-                ""executeCommand"": {
+                }},
+                ""executeCommand"": {{
                     ""dynamicRegistration"": true
-                },
-                ""didChangeConfiguration"": {
+                }},
+                ""didChangeConfiguration"": {{
                     ""dynamicRegistration"": true
-                },
+                }},
                 ""workspaceFolders"": true,
-                ""semanticTokens"": {
+                ""semanticTokens"": {{
                     ""refreshSupport"": true
-                },
-                ""fileOperations"": {
+                }},
+                ""fileOperations"": {{
                     ""dynamicRegistration"": true,
                     ""didCreate"": true,
                     ""didRename"": true,
@@ -98,40 +104,40 @@ let initialize = @"{
                     ""willCreate"": true,
                     ""willRename"": true,
                     ""willDelete"": true
-                },
-                ""inlineValue"": {
+                }},
+                ""inlineValue"": {{
                     ""refreshSupport"": true
-                },
-                ""inlayHint"": {
+                }},
+                ""inlayHint"": {{
                     ""refreshSupport"": true
-                },
-                ""diagnostics"": {
+                }},
+                ""diagnostics"": {{
                     ""refreshSupport"": true
-                }
-            },
-            ""textDocument"": {
-                ""publishDiagnostics"": {
+                }}
+            }},
+            ""textDocument"": {{
+                ""publishDiagnostics"": {{
                     ""relatedInformation"": true,
                     ""versionSupport"": false,
-                    ""tagSupport"": {
+                    ""tagSupport"": {{
                         ""valueSet"": [
                             1,
                             2
                         ]
-                    },
+                    }},
                     ""codeDescriptionSupport"": true,
                     ""dataSupport"": true
-                },
-                ""synchronization"": {
+                }},
+                ""synchronization"": {{
                     ""dynamicRegistration"": true,
                     ""willSave"": true,
                     ""willSaveWaitUntil"": true,
                     ""didSave"": true
-                },
-                ""completion"": {
+                }},
+                ""completion"": {{
                     ""dynamicRegistration"": true,
                     ""contextSupport"": true,
-                    ""completionItem"": {
+                    ""completionItem"": {{
                         ""snippetSupport"": true,
                         ""commitCharactersSupport"": true,
                         ""documentationFormat"": [
@@ -140,29 +146,29 @@ let initialize = @"{
                         ],
                         ""deprecatedSupport"": true,
                         ""preselectSupport"": true,
-                        ""tagSupport"": {
+                        ""tagSupport"": {{
                             ""valueSet"": [
                                 1
                             ]
-                        },
+                        }},
                         ""insertReplaceSupport"": true,
-                        ""resolveSupport"": {
+                        ""resolveSupport"": {{
                             ""properties"": [
                                 ""documentation"",
                                 ""detail"",
                                 ""additionalTextEdits""
                             ]
-                        },
-                        ""insertTextModeSupport"": {
+                        }},
+                        ""insertTextModeSupport"": {{
                             ""valueSet"": [
                                 1,
                                 2
                             ]
-                        },
+                        }},
                         ""labelDetailsSupport"": true
-                    },
+                    }},
                     ""insertTextMode"": 2,
-                    ""completionItemKind"": {
+                    ""completionItemKind"": {{
                         ""valueSet"": [
                             1,
                             2,
@@ -190,50 +196,50 @@ let initialize = @"{
                             24,
                             25
                         ]
-                    },
-                    ""completionList"": {
+                    }},
+                    ""completionList"": {{
                         ""itemDefaults"": [
                             ""commitCharacters"",
                             ""editRange"",
                             ""insertTextFormat"",
                             ""insertTextMode""
                         ]
-                    }
-                },
-                ""hover"": {
+                    }}
+                }},
+                ""hover"": {{
                     ""dynamicRegistration"": true,
                     ""contentFormat"": [
                         ""markdown"",
                         ""plaintext""
                     ]
-                },
-                ""signatureHelp"": {
+                }},
+                ""signatureHelp"": {{
                     ""dynamicRegistration"": true,
-                    ""signatureInformation"": {
+                    ""signatureInformation"": {{
                         ""documentationFormat"": [
                             ""markdown"",
                             ""plaintext""
                         ],
-                        ""parameterInformation"": {
+                        ""parameterInformation"": {{
                             ""labelOffsetSupport"": true
-                        },
+                        }},
                         ""activeParameterSupport"": true
-                    },
+                    }},
                     ""contextSupport"": true
-                },
-                ""definition"": {
+                }},
+                ""definition"": {{
                     ""dynamicRegistration"": true,
                     ""linkSupport"": true
-                },
-                ""references"": {
+                }},
+                ""references"": {{
                     ""dynamicRegistration"": true
-                },
-                ""documentHighlight"": {
+                }},
+                ""documentHighlight"": {{
                     ""dynamicRegistration"": true
-                },
-                ""documentSymbol"": {
+                }},
+                ""documentSymbol"": {{
                     ""dynamicRegistration"": true,
-                    ""symbolKind"": {
+                    ""symbolKind"": {{
                         ""valueSet"": [
                             1,
                             2,
@@ -262,27 +268,27 @@ let initialize = @"{
                             25,
                             26
                         ]
-                    },
+                    }},
                     ""hierarchicalDocumentSymbolSupport"": true,
-                    ""tagSupport"": {
+                    ""tagSupport"": {{
                         ""valueSet"": [
                             1
                         ]
-                    },
+                    }},
                     ""labelSupport"": true
-                },
-                ""codeAction"": {
+                }},
+                ""codeAction"": {{
                     ""dynamicRegistration"": true,
                     ""isPreferredSupport"": true,
                     ""disabledSupport"": true,
                     ""dataSupport"": true,
-                    ""resolveSupport"": {
+                    ""resolveSupport"": {{
                         ""properties"": [
                             ""edit""
                         ]
-                    },
-                    ""codeActionLiteralSupport"": {
-                        ""codeActionKind"": {
+                    }},
+                    ""codeActionLiteralSupport"": {{
+                        ""codeActionKind"": {{
                             ""valueSet"": [
                                 """",
                                 ""quickfix"",
@@ -293,69 +299,69 @@ let initialize = @"{
                                 ""source"",
                                 ""source.organizeImports""
                             ]
-                        }
-                    },
+                        }}
+                    }},
                     ""honorsChangeAnnotations"": false
-                },
-                ""codeLens"": {
+                }},
+                ""codeLens"": {{
                     ""dynamicRegistration"": true
-                },
-                ""formatting"": {
+                }},
+                ""formatting"": {{
                     ""dynamicRegistration"": true
-                },
-                ""rangeFormatting"": {
+                }},
+                ""rangeFormatting"": {{
                     ""dynamicRegistration"": true
-                },
-                ""onTypeFormatting"": {
+                }},
+                ""onTypeFormatting"": {{
                     ""dynamicRegistration"": true
-                },
-                ""rename"": {
+                }},
+                ""rename"": {{
                     ""dynamicRegistration"": true,
                     ""prepareSupport"": true,
                     ""prepareSupportDefaultBehavior"": 1,
                     ""honorsChangeAnnotations"": true
-                },
-                ""documentLink"": {
+                }},
+                ""documentLink"": {{
                     ""dynamicRegistration"": true,
                     ""tooltipSupport"": true
-                },
-                ""typeDefinition"": {
+                }},
+                ""typeDefinition"": {{
                     ""dynamicRegistration"": true,
                     ""linkSupport"": true
-                },
-                ""implementation"": {
+                }},
+                ""implementation"": {{
                     ""dynamicRegistration"": true,
                     ""linkSupport"": true
-                },
-                ""colorProvider"": {
+                }},
+                ""colorProvider"": {{
                     ""dynamicRegistration"": true
-                },
-                ""foldingRange"": {
+                }},
+                ""foldingRange"": {{
                     ""dynamicRegistration"": true,
                     ""rangeLimit"": 5000,
                     ""lineFoldingOnly"": true,
-                    ""foldingRangeKind"": {
+                    ""foldingRangeKind"": {{
                         ""valueSet"": [
                             ""comment"",
                             ""imports"",
                             ""region""
                         ]
-                    },
-                    ""foldingRange"": {
+                    }},
+                    ""foldingRange"": {{
                         ""collapsedText"": false
-                    }
-                },
-                ""declaration"": {
+                    }}
+                }},
+                ""declaration"": {{
                     ""dynamicRegistration"": true,
                     ""linkSupport"": true
-                },
-                ""selectionRange"": {
+                }},
+                ""selectionRange"": {{
                     ""dynamicRegistration"": true
-                },
-                ""callHierarchy"": {
+                }},
+                ""callHierarchy"": {{
                     ""dynamicRegistration"": true
-                },
-                ""semanticTokens"": {
+                }},
+                ""semanticTokens"": {{
                     ""dynamicRegistration"": true,
                     ""tokenTypes"": [
                         ""namespace"",
@@ -397,29 +403,29 @@ let initialize = @"{
                     ""formats"": [
                         ""relative""
                     ],
-                    ""requests"": {
+                    ""requests"": {{
                         ""range"": true,
-                        ""full"": {
+                        ""full"": {{
                             ""delta"": true
-                        }
-                    },
+                        }}
+                    }},
                     ""multilineTokenSupport"": false,
                     ""overlappingTokenSupport"": false,
                     ""serverCancelSupport"": true,
                     ""augmentsSyntaxTokens"": true
-                },
-                ""linkedEditingRange"": {
+                }},
+                ""linkedEditingRange"": {{
                     ""dynamicRegistration"": true
-                },
-                ""typeHierarchy"": {
+                }},
+                ""typeHierarchy"": {{
                     ""dynamicRegistration"": true
-                },
-                ""inlineValue"": {
+                }},
+                ""inlineValue"": {{
                     ""dynamicRegistration"": true
-                },
-                ""inlayHint"": {
+                }},
+                ""inlayHint"": {{
                     ""dynamicRegistration"": true,
-                    ""resolveSupport"": {
+                    ""resolveSupport"": {{
                         ""properties"": [
                             ""tooltip"",
                             ""textEdits"",
@@ -427,66 +433,66 @@ let initialize = @"{
                             ""label.location"",
                             ""label.command""
                         ]
-                    }
-                },
-                ""diagnostic"": {
+                    }}
+                }},
+                ""diagnostic"": {{
                     ""dynamicRegistration"": true,
                     ""relatedDocumentSupport"": false
-                }
-            },
-            ""window"": {
-                ""showMessage"": {
-                    ""messageActionItem"": {
+                }}
+            }},
+            ""window"": {{
+                ""showMessage"": {{
+                    ""messageActionItem"": {{
                         ""additionalPropertiesSupport"": true
-                    }
-                },
-                ""showDocument"": {
+                    }}
+                }},
+                ""showDocument"": {{
                     ""support"": true
-                },
+                }},
                 ""workDoneProgress"": true
-            },
-            ""general"": {
-                ""staleRequestSupport"": {
+            }},
+            ""general"": {{
+                ""staleRequestSupport"": {{
                     ""cancel"": true,
                     ""retryOnContentModified"": [
                         ""textDocument/semanticTokens/full"",
                         ""textDocument/semanticTokens/range"",
                         ""textDocument/semanticTokens/full/delta""
                     ]
-                },
-                ""regularExpressions"": {
+                }},
+                ""regularExpressions"": {{
                     ""engine"": ""ECMAScript"",
                     ""version"": ""ES2020""
-                },
-                ""markdown"": {
+                }},
+                ""markdown"": {{
                     ""parser"": ""marked"",
                     ""version"": ""1.1.0""
-                },
+                }},
                 ""positionEncodings"": [
                     ""utf-16""
                 ]
-            },
-            ""notebookDocument"": {
-                ""synchronization"": {
+            }},
+            ""notebookDocument"": {{
+                ""synchronization"": {{
                     ""dynamicRegistration"": true,
                     ""executionSummarySupport"": true
-                }
-            }
-        },
+                }}
+            }}
+        }},
         ""trace"": ""verbose"",
         ""workspaceFolders"": [
-            {
-                ""uri"": ""file:///c%3A/Users/Zechariah/vscodetest"",
+            {{
+                ""uri"": ""{rootUri}"",
                 ""name"": ""vscodetest""
-            }
+            }}
         ]
-    }
-}"
+    }}
+}}"
 
-let textDocumentDocumentSymbol = @"{ ""jsonrpc"":""2.0"", ""method"": ""textDocument/documentSymbol"", ""id"":1 }"
+let textDocumentDocumentSymbol = @"{ ""jsonrpc"":""2.0"", ""method"": ""textDocument/documentSymbol"", ""id"":1 }}"
 
-let textDocumentHover = @"{""jsonrpc"":""2.0"",""method"":""textDocument/hover"",""params"":{""position"":{""line"":0,""character"":0},""textDocument"":{""uri"":""source://src/main/scala/Address.scala""}},""id"":10}"
+let textDocumentHover = @"{""jsonrpc"":""2.0"",""method"":""textDocument/hover"",""params"":{""position"":{""line"":0,""character"":0}},""textDocument"":{""uri"":""source://src/main/scala/Address.scala""}}}},""id"":10}}"
 
-let shutdown = @"{""jsonrpc"":""2.0"",""method"":""shutdown"",""id"":1}"
+let shutdown = @"{""jsonrpc"":""2.0"",""method"":""shutdown"",""id"":1}}"
 
-let exit = @"{""jsonrpc"":""2.0"",""method"":""exit"",""id"":1}"
+let exit = @"{""jsonrpc"":""2.0"",""method"":""exit"",""id"":1}}"

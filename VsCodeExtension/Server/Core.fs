@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.MSBuild
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis
 open System.IO
+open Microsoft.Build.Locator
 
 type CSharpMetadataParams = {
     TextDocument: TextDocumentIdentifier
@@ -53,11 +54,14 @@ type CSharpLspClient(sendServerNotification: ClientNotificationSender, sendServe
     override __.TextDocumentPublishDiagnostics(p) =
         sendServerNotification "textDocument/publishDiagnostics" (box p) |> Async.Ignore
 
-let mutable workspace: Workspace option = None
-
-type Data<'TParameters> = {
+type Input<'TParameters> = {
     Parameters: 'TParameters
-    LspClient: LspClient
+    Workspace: Workspace option
+}
+
+type Output<'TResponse> = {
+    Response: LspResult<'TResponse>
+    Workspace: Workspace option
 }
 
 let ClassificationTypeMap = Map [
@@ -122,135 +126,174 @@ let SemanticTokenModifiers =
     |> Seq.sortBy (fun kvp -> kvp.Value)
     |> Seq.map (fun kvp -> kvp.Key)
 
-let initialize(data: Data<InitializeParams>): AsyncLspResult<InitializeResult> = async {
-    let mutable createdWorkspace: Workspace option = None
-    try
-        createdWorkspace <- Some(MSBuildWorkspace.Create())
-    with
-    | e -> 3
-    (*
-    let! _ = (createdWorkspace.OpenSolutionAsync($"{data.Parameters.RootPath}/Test.sln") |> Async.AwaitTask)
-    workspace <- Some(createdWorkspace)
-    *)
-    return LspResult.Ok({
-        InitializeResult.Default with
-            Capabilities = {
-                ServerCapabilities.Default with
-                    HoverProvider = Some true
-                    RenameProvider = true |> First |> Some
-                    DefinitionProvider = Some true
-                    TypeDefinitionProvider = None
-                    ImplementationProvider = Some true
-                    ReferencesProvider = Some true
-                    DocumentHighlightProvider = Some true
-                    DocumentSymbolProvider = Some true
-                    WorkspaceSymbolProvider = Some true
-                    DocumentFormattingProvider = Some true
-                    DocumentRangeFormattingProvider = Some true
-                    DocumentOnTypeFormattingProvider = Some {
-                        FirstTriggerCharacter = ';'
-                        MoreTriggerCharacter = Some([| '}'; ')' |]) }
-                    SignatureHelpProvider = Some {
-                        TriggerCharacters = Some([| '('; ','; '<'; '{'; '[' |])
-                        RetriggerCharacters = None }
-                    CompletionProvider = Some {
-                        ResolveProvider = None
-                        TriggerCharacters = Some ([| '.'; '''; |])
-                        AllCommitCharacters = None }
-                    CodeLensProvider = Some { ResolveProvider = Some true }
-                    CodeActionProvider = Some {
-                        CodeActionKinds = None
-                        ResolveProvider = Some true }
-                    TextDocumentSync = Some {
-                        TextDocumentSyncOptions.Default with
-                            OpenClose = Some true
-                            Save = Some { IncludeText = Some true }
-                            Change = Some TextDocumentSyncKind.Incremental }
-                    FoldingRangeProvider = None
-                    SelectionRangeProvider = None
-                    SemanticTokensProvider = Some {
-                        Legend = {
-                            TokenTypes = SemanticTokenTypes |> Seq.toArray
-                            TokenModifiers = SemanticTokenModifiers |> Seq.toArray }
-                        Range = Some true
-                        Full = true |> First |> Some }
-                    InlayHintProvider = Some { ResolveProvider = Some false }
-                    TypeHierarchyProvider = Some true
-                    CallHierarchyProvider = Some true
-        }
-    })
+let initialize(input: Input<InitializeParams>): Async<Output<InitializeResult>> = async {
+    MSBuildLocator.RegisterDefaults() |> ignore
+    let workspace = MSBuildWorkspace.Create()
+    let! _ = (workspace.OpenSolutionAsync(input.Parameters.RootPath.Value) |> Async.AwaitTask)
+    return {
+        Response = LspResult.Ok({
+            InitializeResult.Default with
+                Capabilities = {
+                    ServerCapabilities.Default with
+                        HoverProvider = Some true
+                        RenameProvider = true |> First |> Some
+                        DefinitionProvider = Some true
+                        TypeDefinitionProvider = None
+                        ImplementationProvider = Some true
+                        ReferencesProvider = Some true
+                        DocumentHighlightProvider = Some true
+                        DocumentSymbolProvider = Some true
+                        WorkspaceSymbolProvider = Some true
+                        DocumentFormattingProvider = Some true
+                        DocumentRangeFormattingProvider = Some true
+                        DocumentOnTypeFormattingProvider = Some {
+                            FirstTriggerCharacter = ';'
+                            MoreTriggerCharacter = Some([| '}'; ')' |]) }
+                        SignatureHelpProvider = Some {
+                            TriggerCharacters = Some([| '('; ','; '<'; '{'; '[' |])
+                            RetriggerCharacters = None }
+                        CompletionProvider = Some {
+                            ResolveProvider = None
+                            TriggerCharacters = Some ([| '.'; '''; |])
+                            AllCommitCharacters = None }
+                        CodeLensProvider = Some { ResolveProvider = Some true }
+                        CodeActionProvider = Some {
+                            CodeActionKinds = None
+                            ResolveProvider = Some true }
+                        TextDocumentSync = Some {
+                            TextDocumentSyncOptions.Default with
+                                OpenClose = Some true
+                                Save = Some { IncludeText = Some true }
+                                Change = Some TextDocumentSyncKind.Incremental }
+                        FoldingRangeProvider = None
+                        SelectionRangeProvider = None
+                        SemanticTokensProvider = Some {
+                            Legend = {
+                                TokenTypes = SemanticTokenTypes |> Seq.toArray
+                                TokenModifiers = SemanticTokenModifiers |> Seq.toArray }
+                            Range = Some true
+                            Full = true |> First |> Some }
+                        InlayHintProvider = Some { ResolveProvider = Some false }
+                        TypeHierarchyProvider = Some true
+                        CallHierarchyProvider = Some true
+            }
+        });
+        Workspace = Some(workspace)
+    }
 }
 
-let initialized(data: Data<InitializedParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let initialized(input: Input<InitializedParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDidOpen(data: Data<Types.DidOpenTextDocumentParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let textDocumentDidOpen(input: Input<Types.DidOpenTextDocumentParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDidChange(data: Data<Types.DidChangeTextDocumentParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let textDocumentDidChange(input: Input<Types.DidChangeTextDocumentParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDidSave(data: Data<Types.DidSaveTextDocumentParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let textDocumentDidSave(input: Input<Types.DidSaveTextDocumentParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDidClose(data: Data<Types.DidCloseTextDocumentParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let textDocumentDidClose(input: Input<Types.DidCloseTextDocumentParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentCodeAction(data: Data<Types.CodeActionParams>): AsyncLspResult<Types.TextDocumentCodeActionResult option> = async {
-    return LspResult.Ok(None)
+let textDocumentCodeAction(input: Input<Types.CodeActionParams>): Async<Output<Types.TextDocumentCodeActionResult option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let codeActionResolve(data: Data<CodeAction>): AsyncLspResult<CodeAction option> = async {
-    return LspResult.Ok(None)
+let codeActionResolve(input: Input<CodeAction>): Async<Output<CodeAction option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentCodeLens(data: Data<CodeLensParams>): AsyncLspResult<CodeLens[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentCodeLens(input: Input<CodeLensParams>): Async<Output<CodeLens[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let codeLensResolve(data: Data<CodeLens>): AsyncLspResult<CodeLens> = async {
-    return LspResult.Ok({
-        data.Parameters with Command = None
-    })
+let codeLensResolve(input: Input<CodeLens>): Async<Output<CodeLens>> = async {
+    return {
+        Response = LspResult.Ok({
+            input.Parameters with Command = None
+        });
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDefinition(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.GotoResult option> = async {
-    return LspResult.Ok(None)
+let textDocumentDefinition(input: Input<Types.TextDocumentPositionParams>): Async<Output<Types.GotoResult option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentImplementation(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.GotoResult option> = async {
-    return LspResult.Ok(None)
+let textDocumentImplementation(input: Input<Types.TextDocumentPositionParams>): Async<Output<Types.GotoResult option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentCompletion(data: Data<Types.CompletionParams>): AsyncLspResult<Types.CompletionList option> = async {
-    return LspResult.Ok(None)
+let textDocumentCompletion(input: Input<Types.CompletionParams>): Async<Output<Types.CompletionList option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDocumentHighlight(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.DocumentHighlight[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentDocumentHighlight(input: Input<Types.TextDocumentPositionParams>): Async<Output<Types.DocumentHighlight[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentDocumentSymbol(data: Data<Types.DocumentSymbolParams>): AsyncLspResult<Types.DocumentSymbol[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentDocumentSymbol(input: Input<Types.DocumentSymbolParams>): Async<Output<Types.DocumentSymbol[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentHover(data: Data<Types.TextDocumentPositionParams>): AsyncLspResult<Types.Hover option> = async {
+let textDocumentHover(input: Input<Types.TextDocumentPositionParams>): Async<Output<Types.Hover option>> = async {
     (*
     let solution = workspace.Value.CurrentSolution
-    let documentId = (solution.GetDocumentIdsWithFilePath(data.Parameters.TextDocument.Uri)
+    let documentId = (solution.GetDocumentIdsWithFilePath(input.Parameters.TextDocument.Uri)
         |> Seq.tryHead)
     let document = solution.GetDocument(documentId.Value)
     let! sourceText = document.GetTextAsync() |> Async.AwaitTask
     let text = sourceText.ToString()
     *)
     (*
-    let lines = File.ReadLines(data.Parameters.TextDocument.Uri)
-    let text = lines |> Seq.item(data.Parameters.Position.Line)
+    let lines = File.ReadLines(input.Parameters.TextDocument.Uri)
+    let text = lines |> Seq.item(input.Parameters.Position.Line)
     let syntaxTree = CSharpSyntaxTree.ParseText(text)
     let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
     let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
@@ -261,99 +304,168 @@ let textDocumentHover(data: Data<Types.TextDocumentPositionParams>): AsyncLspRes
     let method = (localFunctions(root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
     *)
-    return LspResult.Ok(Some {
-        Contents = data.Parameters.TextDocument.Uri.ToString() |> MarkedString.String |> HoverContent.MarkedString
-        Range = None
-    })
+    return {
+        Response = LspResult.Ok(Some {
+            Contents = input.Parameters.TextDocument.Uri.ToString() |> MarkedString.String |> HoverContent.MarkedString
+            Range = None
+        });
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentReferences(data: Data<Types.ReferenceParams>): AsyncLspResult<Types.Location[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentReferences(input: Input<Types.ReferenceParams>): Async<Output<Types.Location[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentPrepareRename(data: Data<PrepareRenameParams>): AsyncLspResult<PrepareRenameResult option> = async {
-    return LspResult.Ok(None)
+let textDocumentPrepareRename(input: Input<PrepareRenameParams>): Async<Output<PrepareRenameResult option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentRename(data: Data<Types.RenameParams>): AsyncLspResult<Types.WorkspaceEdit option> = async {
-    return LspResult.Ok(None)
+let textDocumentRename(input: Input<Types.RenameParams>): Async<Output<Types.WorkspaceEdit option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentSignatureHelp(data: Data<Types.SignatureHelpParams>): AsyncLspResult<Types.SignatureHelp option> = async {
-    return LspResult.Ok(None)
+let textDocumentSignatureHelp(input: Input<Types.SignatureHelpParams>): Async<Output<Types.SignatureHelp option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let semanticTokensFull(data: Data<Types.SemanticTokensParams>): AsyncLspResult<Types.SemanticTokens option> = async {
-    return LspResult.Ok(None)
+let semanticTokensFull(input: Input<Types.SemanticTokensParams>): Async<Output<Types.SemanticTokens option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let semanticTokensRange(data: Data<Types.SemanticTokensRangeParams>): AsyncLspResult<Types.SemanticTokens option> = async {
-    return LspResult.Ok(None)
+let semanticTokensRange(input: Input<Types.SemanticTokensRangeParams>): Async<Output<Types.SemanticTokens option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentInlayHint(data: Data<InlayHintParams>): AsyncLspResult<InlayHint[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentInlayHint(input: Input<InlayHintParams>): Async<Output<InlayHint[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentPrepareTypeHierarchy(data: Data<TypeHierarchyPrepareParams>): AsyncLspResult<TypeHierarchyItem[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentPrepareTypeHierarchy(input: Input<TypeHierarchyPrepareParams>): Async<Output<TypeHierarchyItem[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let typeHierarchySupertypes(data: Data<TypeHierarchySupertypesParams>): AsyncLspResult<TypeHierarchyItem[] option> = async {
-    return LspResult.Ok(None)
+let typeHierarchySupertypes(input: Input<TypeHierarchySupertypesParams>): Async<Output<TypeHierarchyItem[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let typeHierarchySubtypes(data: Data<TypeHierarchySubtypesParams>): AsyncLspResult<TypeHierarchyItem[] option> = async {
-    return LspResult.Ok(None)
+let typeHierarchySubtypes(input: Input<TypeHierarchySubtypesParams>): Async<Output<TypeHierarchyItem[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentPrepareCallHierarchy(data: Data<CallHierarchyPrepareParams>): AsyncLspResult<CallHierarchyItem[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentPrepareCallHierarchy(input: Input<CallHierarchyPrepareParams>): Async<Output<CallHierarchyItem[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let callHierarchyIncomingCalls(data: Data<CallHierarchyIncomingCallsParams>): AsyncLspResult<CallHierarchyIncomingCall[] option> = async {
-    return LspResult.Ok(None)
+let callHierarchyIncomingCalls(input: Input<CallHierarchyIncomingCallsParams>): Async<Output<CallHierarchyIncomingCall[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let callHierarchyOutgoingCalls(data: Data<CallHierarchyOutgoingCallsParams>): AsyncLspResult<CallHierarchyOutgoingCall[] option> = async {
-    return LspResult.Ok(None)
+let callHierarchyOutgoingCalls(input: Input<CallHierarchyOutgoingCallsParams>): Async<Output<CallHierarchyOutgoingCall[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let workspaceSymbol(data: Data<Types.WorkspaceSymbolParams>): AsyncLspResult<Types.SymbolInformation[] option> = async {
-    return LspResult.Ok(None)
+let workspaceSymbol(input: Input<Types.WorkspaceSymbolParams>): Async<Output<Types.SymbolInformation[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let workspaceDidChangeWatchedFiles(data: Data<Types.DidChangeWatchedFilesParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let workspaceDidChangeWatchedFiles(input: Input<Types.DidChangeWatchedFilesParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let workspaceDidChangeConfiguration(data: Data<DidChangeConfigurationParams>): Async<LspResult<unit>> = async {
-    return LspResult.Ok()
+let workspaceDidChangeConfiguration(input: Input<DidChangeConfigurationParams>): Async<Output<unit>> = async {
+    return {
+        Response = LspResult.Ok();
+        Workspace = input.Workspace
+    }
 }
 
-let cSharpMetadata(data: Data<CSharpMetadataParams>): AsyncLspResult<CSharpMetadataResponse option> = async {
-    return LspResult.Ok(None)
+let cSharpMetadata(input: Input<CSharpMetadataParams>): Async<Output<CSharpMetadataResponse option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentFormatting(data: Data<Types.DocumentFormattingParams>): AsyncLspResult<Types.TextEdit[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentFormatting(input: Input<Types.DocumentFormattingParams>): Async<Output<Types.TextEdit[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentRangeFormatting(data: Data<DocumentRangeFormattingParams>): AsyncLspResult<TextEdit[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentRangeFormatting(input: Input<DocumentRangeFormattingParams>): Async<Output<TextEdit[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let textDocumentOnTypeFormatting(data: Data<DocumentOnTypeFormattingParams>): AsyncLspResult<TextEdit[] option> = async {
-    return LspResult.Ok(None)
+let textDocumentOnTypeFormatting(input: Input<DocumentOnTypeFormattingParams>): Async<Output<TextEdit[] option>> = async {
+    return {
+        Response = LspResult.Ok(None);
+        Workspace = input.Workspace
+    }
 }
 
-let setupEndpoints(lspClient: LspClient) =
+let setupEndpoints(_: LspClient) =
+    let mutable workspace: Workspace option = None
+
     let handleRequest(requestName, func) =
         let requestHandler parameters = async {
-            return! func({
+            let! output = func({
                 Parameters = parameters;
-                LspClient = lspClient
+                Workspace = workspace
             })
+
+            workspace <- output.Workspace
+
+            return output.Response
         }
 
         (requestName, requestHandling(requestHandler))

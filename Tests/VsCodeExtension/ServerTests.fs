@@ -6,10 +6,7 @@ open System.IO
 open System.IO.Pipes
 open Xunit
 
-let requestWithContentLength(request: string) =
-    @$"Content-Length: {request.Length}
-
-{request}"
+let requestWithContentLength(request: string) = $"Content-Length: {request.Length}\r\n\r\n{request}"
 
 [<Fact>]
 let ``server responds with data when requesting initialize`` () = async {
@@ -29,7 +26,8 @@ let ``server responds with data when requesting initialize`` () = async {
     
     let! serverAsync = Async.StartChild(server)
 
-    inputWriter.Write(requestWithContentLength(Requests.initialize))
+    inputWriter.Write(requestWithContentLength(
+        Requests.initialize(Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic", "Basic.sln"))))
 
     let contentLengthLine = outputReader.ReadLine()
     let contentLength = int(contentLengthLine.Replace("Content-Length: ", ""))
