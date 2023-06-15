@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="Ionide.LanguageServerProtocol" Version="0.4.15" />
 	<PackageReference Include="Microsoft.Build" Version="17.3.2">
 	  <ExcludeAssets>runtime</ExcludeAssets>
 	</PackageReference>
@@ -25,7 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\LanguageServerProtocol\src\Ionide.LanguageServerProtocol.fsproj" />
     <ProjectReference Include="..\..\Project\poke.fsproj" />
   </ItemGroup>
 </Project>
