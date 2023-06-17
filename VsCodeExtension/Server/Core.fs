@@ -127,7 +127,7 @@ let SemanticTokenModifiers =
     |> Seq.map (fun kvp -> kvp.Key)
 
 let initialize(input: Input<InitializeParams>): Async<Output<InitializeResult>> = async {
-    MSBuildLocator.RegisterDefaults() |> ignore
+    if (not MSBuildLocator.IsRegistered) then MSBuildLocator.RegisterDefaults() |> ignore
     let workspace = MSBuildWorkspace.Create()
     let! _ = (workspace.OpenSolutionAsync(input.Parameters.RootPath.Value) |> Async.AwaitTask)
     return {

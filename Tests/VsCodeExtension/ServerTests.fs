@@ -102,9 +102,9 @@ let ``server responds with data when requesting textDocument/hover`` () = async 
     let initializeOutput = readOutput(outputReader)
     initializeOutput.Should().NotBeNull("", []) |> ignore
 
-    inputWriter.Write(requestWithContentLength(Requests.textDocumentHover))
+    let temp = requestWithContentLength(Requests.textDocumentHover);
+    inputWriter.Write(temp)
 
-    let test = outputReader.ReadToEnd()
     let hoverOutput = readOutput(outputReader)
     hoverOutput.Should().Be(@"{""jsonrpc"":""2.0"",""id"":10,""result"":{""contents"":""Hello world""}}", "", []) |> ignore
 
