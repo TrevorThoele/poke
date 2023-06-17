@@ -284,7 +284,7 @@ let textDocumentDocumentSymbol(input: Input<Types.DocumentSymbolParams>): Async<
 
 let textDocumentHover(input: Input<Types.TextDocumentPositionParams>): Async<Output<Types.Hover option>> = async {
     (*
-    let solution = workspace.Value.CurrentSolution
+    let solution = input.Workspace.Value.CurrentSolution
     let documentId = (solution.GetDocumentIdsWithFilePath(input.Parameters.TextDocument.Uri)
         |> Seq.tryHead)
     let document = solution.GetDocument(documentId.Value)
@@ -304,9 +304,18 @@ let textDocumentHover(input: Input<Types.TextDocumentPositionParams>): Async<Out
     let method = (localFunctions(root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
     *)
+    (*
     return {
         Response = LspResult.Ok(Some {
             Contents = input.Parameters.TextDocument.Uri.ToString() |> MarkedString.String |> HoverContent.MarkedString
+            Range = None
+        });
+        Workspace = input.Workspace
+    }
+    *)
+    return {
+        Response = LspResult.Ok(Some {
+            Contents = "Hello world" |> MarkedString.String |> HoverContent.MarkedString
             Range = None
         });
         Workspace = input.Workspace
