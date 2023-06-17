@@ -52,6 +52,18 @@
           }
         },
         "problemMatcher": "$msCompile"
+      },
+      {
+        "label": "build client",
+        "command": "npm",
+        "type": "shell",
+        "args": [
+          "run",
+          "build"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}/VsCodeExtension/Client"
+        }
       }
     ]
 }

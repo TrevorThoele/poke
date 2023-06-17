@@ -8,6 +8,9 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.MSBuild
 open Microsoft.CodeAnalysis
 open Microsoft.Build.Locator
+open System.Web
+open Microsoft.CodeAnalysis.FindSymbols
+open System.IO
 
 type CSharpMetadataParams = {
     TextDocument: TextDocumentIdentifier
@@ -126,7 +129,9 @@ let SemanticTokenModifiers =
 let initialize(input: Input<InitializeParams>): Async<Output<InitializeResult>> = async {
     if (not MSBuildLocator.IsRegistered) then MSBuildLocator.RegisterDefaults() |> ignore
     let workspace = MSBuildWorkspace.Create()
-    let! _ = (workspace.OpenSolutionAsync(input.Parameters.RootPath.Value) |> Async.AwaitTask)
+    let solutionPaths = System.IO.Directory.GetFiles(input.Parameters.RootPath.Value, "*.sln")
+    let solution = solutionPaths |> Seq.head
+    let! _ = (workspace.OpenSolutionAsync(solution) |> Async.AwaitTask)
     return {
         Response = LspResult.Ok({
             InitializeResult.Default with
@@ -280,39 +285,17 @@ let textDocumentDocumentSymbol(input: Input<Types.DocumentSymbolParams>): Async<
 }
 
 let textDocumentHover(input: Input<Types.TextDocumentPositionParams>): Async<Output<Types.Hover option>> = async {
-    (*
     let solution = input.Workspace.Value.CurrentSolution
-    let documentId = (solution.GetDocumentIdsWithFilePath(input.Parameters.TextDocument.Uri)
-        |> Seq.tryHead)
-    let document = solution.GetDocument(documentId.Value)
+    let path = Path.GetFullPath(HttpUtility.UrlDecode(input.Parameters.TextDocument.Uri).Substring("file:///".Length))
+    let documentId = solution.GetDocumentIdsWithFilePath(path) |> Seq.head
+    let document = solution.GetDocument(documentId)
     let! sourceText = document.GetTextAsync() |> Async.AwaitTask
-    let text = sourceText.ToString()
-    *)
-    (*
-    let lines = File.ReadLines(input.Parameters.TextDocument.Uri)
-    let text = lines |> Seq.item(input.Parameters.Position.Line)
-    let syntaxTree = CSharpSyntaxTree.ParseText(text)
-    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
-    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
-    let model = compilation.GetSemanticModel(syntaxTree, false)
-    let root = model.SyntaxTree.GetCompilationUnitRoot()
-
-    let methods = methods(root)
-    let method = (localFunctions(root)
-        |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
-    *)
-    (*
+    let position = sourceText.Lines[input.Parameters.Position.Line].Start + input.Parameters.Position.Character
+    let! symbol = SymbolFinder.FindSymbolAtPositionAsync(document, position) |> Async.AwaitTask
+    let text = symbol.ToString()
     return {
         Response = LspResult.Ok(Some {
-            Contents = input.Parameters.TextDocument.Uri.ToString() |> MarkedString.String |> HoverContent.MarkedString
-            Range = None
-        });
-        Workspace = input.Workspace
-    }
-    *)
-    return {
-        Response = LspResult.Ok(Some {
-            Contents = "Hello world" |> MarkedString.String |> HoverContent.MarkedString
+            Contents = text |> MarkedString.String |> HoverContent.MarkedString
             Range = None
         });
         Workspace = input.Workspace

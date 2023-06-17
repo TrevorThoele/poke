@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
-  "activationEvents": ["onLanguage:plaintext"],
+  "activationEvents": [
+    "onLanguage:plaintext"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --build",

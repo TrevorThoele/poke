@@ -36,7 +36,7 @@ let ``server responds with data when requesting initialize`` () = async {
     let! serverAsync = Async.StartChild(server)
 
     inputWriter.Write(prependContentLength(Requests.initialize(
-        Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic", "Basic.sln"))))
+        Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic"))))
     let initializeOutput = readOutput(outputReader)
     initializeOutput.Should().NotBeNull("", []) |> ignore
     
@@ -94,7 +94,7 @@ let ``server responds with null when requesting initialized`` () = async {
     let! serverAsync = Async.StartChild(server)
 
     inputWriter.Write(prependContentLength(Requests.initialize(
-        Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic", "Basic.sln"))))
+        Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic"))))
     let initializeOutput = readOutput(outputReader)
     initializeOutput.Should().NotBeNull("", []) |> ignore
 
@@ -109,7 +109,7 @@ let ``server responds with null when requesting initialized`` () = async {
 }
 
 [<Fact>]
-let ``server responds with content when requesting textDocument/hover`` () = async {
+let ``server responds with symbol name when requesting textDocument/hover`` () = async {
     use inputServerPipe = new AnonymousPipeServerStream()
     use inputClientPipe = new AnonymousPipeClientStream(inputServerPipe.GetClientHandleAsString())
     use outputServerPipe = new AnonymousPipeServerStream()
@@ -126,14 +126,14 @@ let ``server responds with content when requesting textDocument/hover`` () = asy
 
     let! serverAsync = Async.StartChild(server)
 
-    inputWriter.Write(prependContentLength(Requests.initialize(
-        Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic", "Basic.sln"))))
+    let solutionPath = Path.Join(Directory.GetCurrentDirectory(), "Solutions", "Basic")
+    inputWriter.Write(prependContentLength(Requests.initialize(solutionPath)))
     let initializeOutput = readOutput(outputReader)
     initializeOutput.Should().NotBeNull("", []) |> ignore
 
-    inputWriter.Write(prependContentLength(Requests.textDocumentHover()))
+    inputWriter.Write(prependContentLength(Requests.textDocumentHover(solutionPath)))
     let hoverOutput = readOutput(outputReader)
-    hoverOutput.Should().Be(@"{""jsonrpc"":""2.0"",""id"":10,""result"":{""contents"":""Hello world""}}", "", []) |> ignore
+    hoverOutput.Should().Be(@"{""jsonrpc"":""2.0"",""id"":10,""result"":{""contents"":""Basic.Program.Main()""}}", "", []) |> ignore
 
     inputWriter.Write(prependContentLength(Requests.shutdown()))
     inputWriter.Write(prependContentLength(Requests.exit()))
