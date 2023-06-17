@@ -5,11 +5,8 @@ open Ionide.LanguageServerProtocol
 open Ionide.LanguageServerProtocol.Server
 open Ionide.LanguageServerProtocol.Types
 open Microsoft.CodeAnalysis.Classification
-open poke.Program
 open Microsoft.CodeAnalysis.MSBuild
-open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis
-open System.IO
 open Microsoft.Build.Locator
 
 type CSharpMetadataParams = {
@@ -521,7 +518,7 @@ let setupEndpoints(_: LspClient) =
 
 let start(input: IO.Stream, output: IO.Stream) =
     try
-        let result = (Ionide.LanguageServerProtocol.Server.startWithSetup
+        let result = (Server.startWithSetup
             setupEndpoints
             input
             output
