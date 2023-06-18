@@ -10,7 +10,12 @@ type FunctionStateSpace = {
     Codomain: bigint
 }
 
-let typeStateSpace(check: string) =
+type Source = {
+    Root: CompilationUnitSyntax
+    Model: SemanticModel
+}
+
+let basicStateSpace(check: string) =
     match check with
     | "bool" -> bigint(2)
     | "char" -> bigint(Math.Pow(2, 8))
@@ -25,14 +30,24 @@ let typeStateSpace(check: string) =
     | "ulong" -> bigint(Math.Pow(2, 64))
     | "double" -> bigint(Math.Pow(2, 64))
     | "decimal" -> bigint(Math.Pow(2, 128))
-    | _ -> bigint(0)
+    | "void" -> bigint(1)
+    | _ -> bigint(1)
+
+let examinableMember(symbol: ISymbol): bool =
+    not(symbol :? IMethodSymbol) && not(symbol :? IPropertySymbol)
 
 let rec declaredStateSpace(symbol: ISymbol, model: SemanticModel): bigint =
-    match symbol.Kind with
-    | SymbolKind.ArrayType -> declaredStateSpace((symbol :?> IArrayTypeSymbol).ElementType, model)
-    | SymbolKind.Local -> typeStateSpace((symbol :?> ILocalSymbol).Type.ToString())
-    | SymbolKind.NamedType -> typeStateSpace(symbol.ToString())
-    | _ -> bigint(0)
+    match symbol with
+    | :? IArrayTypeSymbol as array -> declaredStateSpace(array.ElementType, model)
+    | :? ILocalSymbol as local -> basicStateSpace(local.Type.ToString())
+    | :? IFieldSymbol as field -> declaredStateSpace(field.Type, model)
+    | :? INamedTypeSymbol as namedType ->
+        match namedType.SpecialType with
+        | SpecialType.None -> ((bigint(1), namedType.GetMembers() |> Seq.filter(examinableMember) |> Seq.append([namedType.BaseType :> ISymbol]))
+            ||> Seq.fold(fun accumulator x ->
+                accumulator * declaredStateSpace(x, model)))
+        | _ -> basicStateSpace(symbol.ToString())
+    | _ -> bigint(1)
 
 let private typedDescendentNodes<'T when 'T :> SyntaxNode>(node: SyntaxNode): seq<'T> =
     node.DescendantNodes()
@@ -44,6 +59,9 @@ let methods(node: SyntaxNode) =
 
 let variables(node: SyntaxNode) =
     typedDescendentNodes<VariableDeclaratorSyntax>(node)
+
+let classes(node: SyntaxNode) =
+    typedDescendentNodes<ClassDeclarationSyntax>(node)
 
 let assignments(node: SyntaxNode) =
     typedDescendentNodes<AssignmentExpressionSyntax>(node)
@@ -64,9 +82,20 @@ let accessedExternalVariables(node: SyntaxNode, model: SemanticModel) =
         |> Seq.map(fun x -> x.Symbol)
         |> Seq.filter(fun x -> not (locals |> Seq.exists(fun y -> y.Equals(x))))
 
-let functionStateSpace(syntax: LocalFunctionStatementSyntax, model: SemanticModel): FunctionStateSpace = {
-    Domain = ((bigint(0), syntax.ParameterList.Parameters)
+let declaredFunctionStateSpace(syntax: LocalFunctionStatementSyntax, model: SemanticModel): FunctionStateSpace = {
+    Domain = ((bigint(1), syntax.ParameterList.Parameters)
         ||> Seq.fold(fun accumulator x ->
-            accumulator + declaredStateSpace(model.GetSymbolInfo(x.Type).Symbol, model)))
-    Codomain = bigint(0)
+            accumulator * declaredStateSpace(model.GetSymbolInfo(x.Type).Symbol, model)))
+    Codomain = declaredStateSpace(model.GetSymbolInfo(syntax.ReturnType).Symbol, model)
 }
+
+let parseSource(text: string) =
+    let syntaxTree = CSharpSyntaxTree.ParseText(text)
+    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
+    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
+    let model = compilation.GetSemanticModel(syntaxTree, false)
+    let root = model.SyntaxTree.GetCompilationUnitRoot()
+    {
+        Root = root;
+        Model = model
+    }

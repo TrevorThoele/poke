@@ -5,9 +5,10 @@
 		<GenerateProgramFile>false</GenerateProgramFile>
 	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="Poke\DeclaredTests.fs" />
+		<Compile Include="Poke\PokeTests.fs" />
 		<Compile Include="VsCodeExtension\Requests.fs" />
 		<Compile Include="VsCodeExtension\ServerTests.fs" />
-		<Compile Include="PokeTests.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 	<ItemGroup>
