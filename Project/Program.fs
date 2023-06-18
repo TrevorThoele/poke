@@ -39,7 +39,7 @@ let examinableMember(symbol: ISymbol): bool =
 let rec declaredStateSpace(symbol: ISymbol, model: SemanticModel): bigint =
     match symbol with
     | :? IArrayTypeSymbol as array -> declaredStateSpace(array.ElementType, model)
-    | :? ILocalSymbol as local -> basicStateSpace(local.Type.ToString())
+    | :? ILocalSymbol as local -> declaredStateSpace(local.Type, model)
     | :? IFieldSymbol as field -> declaredStateSpace(field.Type, model)
     | :? INamedTypeSymbol as namedType ->
         match namedType.SpecialType with
@@ -62,6 +62,9 @@ let variables(node: SyntaxNode) =
 
 let classes(node: SyntaxNode) =
     typedDescendentNodes<ClassDeclarationSyntax>(node)
+
+let structs(node: SyntaxNode) =
+    typedDescendentNodes<StructDeclarationSyntax>(node)
 
 let assignments(node: SyntaxNode) =
     typedDescendentNodes<AssignmentExpressionSyntax>(node)

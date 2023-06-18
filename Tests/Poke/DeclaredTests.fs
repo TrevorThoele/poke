@@ -7,19 +7,21 @@ open Microsoft.CodeAnalysis.CSharp
 
 let variableScenarios: obj [] list =
     [
-        [|"bool value"; bigint(2)|]
-        [|"char value"; bigint(256)|]
-        [|"sbyte value"; bigint(256)|]
-        [|"byte value"; bigint(256)|]
-        [|"short value"; bigint(65536)|]
-        [|"ushort value"; bigint(65536)|]
-        [|"int value"; bigint.Parse("4294967296")|]
-        [|"uint value"; bigint.Parse("4294967296")|]
-        [|"float value"; bigint.Parse("4294967296")|]
-        [|"long value"; bigint.Parse("18446744073709551616")|]
-        [|"ulong value"; bigint.Parse("18446744073709551616")|]
-        [|"double value"; bigint.Parse("18446744073709551616")|]
-        [|"decimal value"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"bool value;"; bigint(2)|]
+        [|"char value;"; bigint(256)|]
+        [|"sbyte value;"; bigint(256)|]
+        [|"byte value;"; bigint(256)|]
+        [|"short value;"; bigint(65536)|]
+        [|"ushort value;"; bigint(65536)|]
+        [|"int value;"; bigint.Parse("4294967296")|]
+        [|"uint value;"; bigint.Parse("4294967296")|]
+        [|"float value;"; bigint.Parse("4294967296")|]
+        [|"long value;"; bigint.Parse("18446744073709551616")|]
+        [|"ulong value;"; bigint.Parse("18446744073709551616")|]
+        [|"double value;"; bigint.Parse("18446744073709551616")|]
+        [|"decimal value;"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"class Class { bool Bool; } Class value;"; bigint(2)|]
+        [|"struct Struct { bool Bool; } Struct value;"; bigint(2)|]
     ]
 
 [<Theory>]
@@ -35,31 +37,35 @@ let ``variable has correct state space`` (text: string, expectedResult: bigint) 
 
 let functionDomainScenarios: obj [] list =
     [
-        [|"void MyFunction(bool value) {}"; bigint.Parse("2")|]
-        [|"void MyFunction(char value) {}"; bigint.Parse("256")|]
-        [|"void MyFunction(sbyte value) {}"; bigint.Parse("256")|]
-        [|"void MyFunction(byte value) {}"; bigint.Parse("256")|]
-        [|"void MyFunction(short value) {}"; bigint.Parse("65536")|]
-        [|"void MyFunction(ushort value) {}"; bigint.Parse("65536")|]
-        [|"void MyFunction(int value) {}"; bigint.Parse("4294967296")|]
-        [|"void MyFunction(uint value) {}"; bigint.Parse("4294967296")|]
-        [|"void MyFunction(float value) {}"; bigint.Parse("4294967296")|]
-        [|"void MyFunction(long value) {}"; bigint.Parse("18446744073709551616")|]
-        [|"void MyFunction(ulong value) {}"; bigint.Parse("18446744073709551616")|]
-        [|"void MyFunction(double value) {}"; bigint.Parse("18446744073709551616")|]
-        [|"void MyFunction(decimal value) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
-        [|"void MyFunction(bool value, char value2) {}"; bigint.Parse("512")|]
-        [|"void MyFunction(char value, sbyte value2) {}"; bigint.Parse("65536")|]
-        [|"void MyFunction(sbyte value, byte value2) {}"; bigint.Parse("65536")|]
-        [|"void MyFunction(byte value, short value2) {}"; bigint.Parse("16777216")|]
-        [|"void MyFunction(short value, ushort value2) {}"; bigint.Parse("4294967296")|]
-        [|"void MyFunction(ushort value, int value2) {}"; bigint.Parse("281474976710656")|]
-        [|"void MyFunction(int value, uint value2) {}"; bigint.Parse("18446744073709551616")|]
-        [|"void MyFunction(uint value, float value2) {}"; bigint.Parse("18446744073709551616")|]
-        [|"void MyFunction(float value, long value2) {}"; bigint.Parse("79228162514264337593543950336")|]
-        [|"void MyFunction(long value, ulong value2) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
-        [|"void MyFunction(ulong value, double value2) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
-        [|"void MyFunction(double value, decimal value2) {}"; bigint.Parse("6277101735386680763835789423207666416102355444464034512896")|]
+        [|"void Function(bool value) {}"; bigint.Parse("2")|]
+        [|"void Function(char value) {}"; bigint.Parse("256")|]
+        [|"void Function(sbyte value) {}"; bigint.Parse("256")|]
+        [|"void Function(byte value) {}"; bigint.Parse("256")|]
+        [|"void Function(short value) {}"; bigint.Parse("65536")|]
+        [|"void Function(ushort value) {}"; bigint.Parse("65536")|]
+        [|"void Function(int value) {}"; bigint.Parse("4294967296")|]
+        [|"void Function(uint value) {}"; bigint.Parse("4294967296")|]
+        [|"void Function(float value) {}"; bigint.Parse("4294967296")|]
+        [|"void Function(long value) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void Function(ulong value) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void Function(double value) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void Function(decimal value) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"class Class { bool Bool; } void Function(Class value) {}"; bigint.Parse("2")|]
+        [|"struct Struct { bool Bool; } void Function(Struct value) {}"; bigint.Parse("2")|]
+        [|"void Function(bool value, char value2) {}"; bigint.Parse("512")|]
+        [|"void Function(char value, sbyte value2) {}"; bigint.Parse("65536")|]
+        [|"void Function(sbyte value, byte value2) {}"; bigint.Parse("65536")|]
+        [|"void Function(byte value, short value2) {}"; bigint.Parse("16777216")|]
+        [|"void Function(short value, ushort value2) {}"; bigint.Parse("4294967296")|]
+        [|"void Function(ushort value, int value2) {}"; bigint.Parse("281474976710656")|]
+        [|"void Function(int value, uint value2) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void Function(uint value, float value2) {}"; bigint.Parse("18446744073709551616")|]
+        [|"void Function(float value, long value2) {}"; bigint.Parse("79228162514264337593543950336")|]
+        [|"void Function(long value, ulong value2) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"void Function(ulong value, double value2) {}"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"void Function(double value, decimal value2) {}"; bigint.Parse("6277101735386680763835789423207666416102355444464034512896")|]
+        [|"class Class { bool Bool; } void Function(bool value, Class value2) {}"; bigint.Parse("4")|]
+        [|"struct Struct { bool Bool; } void Function(bool value, Struct value2) {}"; bigint.Parse("4")|]
     ]
 
 [<Theory>]
@@ -68,7 +74,7 @@ let ``function has correct domain state space`` (text: string, expectedResult: b
     let source = parseSource(text)
 
     let mainMethod = (localFunctions(source.Root)
-        |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
+        |> Seq.find(fun x -> x.Identifier.ToString() = "Function"))
     let result = declaredFunctionStateSpace(mainMethod, source.Model)
 
     result.Domain.Should().Be(expectedResult, "", []) |> ignore
@@ -76,19 +82,21 @@ let ``function has correct domain state space`` (text: string, expectedResult: b
 
 let functionCodomainScenarios: obj [] list =
     [
-        [|"bool MyFunction() {}"; bigint.Parse("2")|]
-        [|"char MyFunction() {}"; bigint.Parse("256")|]
-        [|"sbyte MyFunction() {}"; bigint.Parse("256")|]
-        [|"byte MyFunction() {}"; bigint.Parse("256")|]
-        [|"short MyFunction() {}"; bigint.Parse("65536")|]
-        [|"ushort MyFunction() {}"; bigint.Parse("65536")|]
-        [|"int MyFunction() {}"; bigint.Parse("4294967296")|]
-        [|"uint MyFunction() {}"; bigint.Parse("4294967296")|]
-        [|"float MyFunction() {}"; bigint.Parse("4294967296")|]
-        [|"long MyFunction() {}"; bigint.Parse("18446744073709551616")|]
-        [|"ulong MyFunction() {}"; bigint.Parse("18446744073709551616")|]
-        [|"double MyFunction() {}"; bigint.Parse("18446744073709551616")|]
-        [|"decimal MyFunction() {}"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"bool Function() {}"; bigint.Parse("2")|]
+        [|"char Function() {}"; bigint.Parse("256")|]
+        [|"sbyte Function() {}"; bigint.Parse("256")|]
+        [|"byte Function() {}"; bigint.Parse("256")|]
+        [|"short Function() {}"; bigint.Parse("65536")|]
+        [|"ushort Function() {}"; bigint.Parse("65536")|]
+        [|"int Function() {}"; bigint.Parse("4294967296")|]
+        [|"uint Function() {}"; bigint.Parse("4294967296")|]
+        [|"float Function() {}"; bigint.Parse("4294967296")|]
+        [|"long Function() {}"; bigint.Parse("18446744073709551616")|]
+        [|"ulong Function() {}"; bigint.Parse("18446744073709551616")|]
+        [|"double Function() {}"; bigint.Parse("18446744073709551616")|]
+        [|"decimal Function() {}"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"class Class { bool Bool; } Class Function() {}"; bigint.Parse("2")|]
+        [|"struct Struct { bool Bool; } Struct Function() {}"; bigint.Parse("2")|]
     ]
 
 [<Theory>]
@@ -97,7 +105,7 @@ let ``function has correct codomain state space`` (text: string, expectedResult:
     let source = parseSource(text)
 
     let mainMethod = (localFunctions(source.Root)
-        |> Seq.find(fun x -> x.Identifier.ToString() = "MyFunction"))
+        |> Seq.find(fun x -> x.Identifier.ToString() = "Function"))
     let result = declaredFunctionStateSpace(mainMethod, source.Model)
 
     result.Domain.Should().Be(1, "", []) |> ignore
@@ -214,6 +222,81 @@ let ``class has correct state space`` (text: string, expectedResult: bigint) =
 
     let ``class`` = (classes(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "Class"))
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``), source.Model)
+    
+    result.Should().Be(expectedResult, "", [])
+
+[<Fact>]
+let ``many base classes result in correct state space`` () =
+    let source = parseSource("class Base1 { bool Bool; } class Base2 : Base1 { char Char; } class Class : Base2 {}")
+
+    let ``class`` = (classes(source.Root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "Class"))
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``), source.Model)
+    
+    result.Should().Be(bigint.Parse("512"), "", [])
+
+let structScenarios: obj [] list =
+    [
+        [|"struct Struct { bool Bool; }"; bigint.Parse("2")|]
+        [|"struct Struct { char Char; }"; bigint.Parse("256")|]
+        [|"struct Struct { sbyte Sbyte; }"; bigint.Parse("256")|]
+        [|"struct Struct { byte Byte; }"; bigint.Parse("256")|]
+        [|"struct Struct { short Short; }"; bigint.Parse("65536")|]
+        [|"struct Struct { ushort Ushort; }"; bigint.Parse("65536")|]
+        [|"struct Struct { int Int; }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { uint Uint; }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { float Float; }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { long Long; }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { ulong Ulong; }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { double Double; }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { decimal Decimal; }"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"struct Struct { bool Bool { get; set; } }"; bigint.Parse("2")|]
+        [|"struct Struct { char Char { get; set; } }"; bigint.Parse("256")|]
+        [|"struct Struct { sbyte Sbyte { get; set; } }"; bigint.Parse("256")|]
+        [|"struct Struct { byte Byte { get; set; } }"; bigint.Parse("256")|]
+        [|"struct Struct { short Short { get; set; } }"; bigint.Parse("65536")|]
+        [|"struct Struct { ushort Ushort { get; set; } }"; bigint.Parse("65536")|]
+        [|"struct Struct { int Int { get; set; } }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { uint Uint { get; set; } }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { float Float { get; set; } }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { long Long { get; set; } }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { ulong Ulong { get; set; } }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { double Double { get; set; } }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { decimal Decimal { get; set; } }"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"struct Struct { bool Bool; char Char }"; bigint.Parse("512")|]
+        [|"struct Struct { char Char; sbyte Sbyte; }"; bigint.Parse("65536")|]
+        [|"struct Struct { sbyte Sbyte; byte Byte; }"; bigint.Parse("65536")|]
+        [|"struct Struct { byte Byte; short Short }"; bigint.Parse("16777216")|]
+        [|"struct Struct { short Short; ushort Ushort; }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { ushort Ushort; int Int; }"; bigint.Parse("281474976710656")|]
+        [|"struct Struct { int Int; uint Uint; }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { uint Uint; float Float; }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { float Float; long Long; }"; bigint.Parse("79228162514264337593543950336")|]
+        [|"struct Struct { long Long; ulong Ulong; }"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"struct Struct { ulong Ulong; double Double; }"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"struct Struct { double Double; decimal Decimal; }"; bigint.Parse("6277101735386680763835789423207666416102355444464034512896")|]
+        [|"struct Struct { bool Bool { get; set; } char Char { get; set; } }"; bigint.Parse("512")|]
+        [|"struct Struct { char Char { get; set; } sbyte Sbyte { get; set; } }"; bigint.Parse("65536")|]
+        [|"struct Struct { sbyte Sbyte { get; set; } byte Byte { get; set; } }"; bigint.Parse("65536")|]
+        [|"struct Struct { byte Byte { get; set; } short Short { get; set; } }"; bigint.Parse("16777216")|]
+        [|"struct Struct { short Short { get; set; } ushort Ushort { get; set; } }"; bigint.Parse("4294967296")|]
+        [|"struct Struct { ushort Ushort { get; set; } int Int { get; set; } }"; bigint.Parse("281474976710656")|]
+        [|"struct Struct { int Int { get; set; } uint Uint { get; set; } }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { uint Uint { get; set; } float Float { get; set; } }"; bigint.Parse("18446744073709551616")|]
+        [|"struct Struct { float Float { get; set; } long Long { get; set; } }"; bigint.Parse("79228162514264337593543950336")|]
+        [|"struct Struct { long Long { get; set; } ulong Ulong { get; set; } }"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"struct Struct { ulong Ulong { get; set; } double Double { get; set; } }"; bigint.Parse("340282366920938463463374607431768211456")|]
+        [|"struct Struct { double Double { get; set; } decimal Decimal { get; set; } }"; bigint.Parse("6277101735386680763835789423207666416102355444464034512896")|]
+    ]
+
+[<Theory>]
+[<MemberData(nameof(structScenarios))>]
+let ``struct has correct state space`` (text: string, expectedResult: bigint) =
+    let source = parseSource(text)
+
+    let ``class`` = (structs(source.Root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "Struct"))
     let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``), source.Model)
     
     result.Should().Be(expectedResult, "", [])
