@@ -36,23 +36,36 @@ let basicStateSpace(check: string) =
 let examinableMember(symbol: ISymbol): bool =
     not(symbol :? IMethodSymbol) && not(symbol :? IPropertySymbol)
 
+let rec classMembers(symbol: INamedTypeSymbol): ISymbol seq =
+    if isNull(symbol)
+        then []
+        else symbol.GetMembers() |> Seq.filter(examinableMember) |> Seq.append(classMembers(symbol.BaseType))
+
 let enumStateSpace(symbol: INamedTypeSymbol): bigint =
     let caseCount = symbol.GetMembers() |> Seq.filter(examinableMember) |> Seq.length
     (if caseCount = 0 then 1 else caseCount) |> bigint
 
 let rec declaredStateSpace(symbol: ISymbol, model: SemanticModel): bigint =
-    match symbol with
-    | :? IArrayTypeSymbol as array -> declaredStateSpace(array.ElementType, model)
-    | :? ILocalSymbol as local -> declaredStateSpace(local.Type, model)
-    | :? IFieldSymbol as field -> declaredStateSpace(field.Type, model)
-    | :? INamedTypeSymbol as namedType ->
-        match (namedType.TypeKind, namedType.SpecialType) with
-        | (TypeKind.Enum, _) -> enumStateSpace(namedType)
-        | (_, SpecialType.None) -> ((bigint(1), namedType.GetMembers() |> Seq.filter(examinableMember) |> Seq.append([namedType.BaseType :> ISymbol]))
-            ||> Seq.fold(fun accumulator x ->
-                accumulator * declaredStateSpace(x, model)))
-        | _ -> basicStateSpace(symbol.ToString())
-    | _ -> bigint(1)
+    let (stateSpace, isNullable) =
+        match symbol with
+        | :? IArrayTypeSymbol as array ->
+            (declaredStateSpace(array.ElementType, model), false)
+        | :? ILocalSymbol as local ->
+            (declaredStateSpace(local.Type, model), false)
+        | :? IFieldSymbol as field ->
+            (declaredStateSpace(field.Type, model), false)
+        | :? INamedTypeSymbol as namedType ->
+            match (namedType.TypeKind, namedType.SpecialType) with
+            | (TypeKind.Enum, _) ->
+                (enumStateSpace(namedType), false)
+            | (_, SpecialType.None) -> (
+                ((bigint(1), classMembers(namedType)) ||> Seq.fold(fun total x -> total * declaredStateSpace(x, model))),
+                namedType.IsReferenceType)
+            | _ ->
+                (basicStateSpace(symbol.ToString()), false)
+        | _ ->
+            (bigint(1), false)
+    stateSpace + if isNullable then bigint(1) else bigint(0)
 
 let private typedDescendentNodes<'T when 'T :> SyntaxNode>(node: SyntaxNode): seq<'T> =
     node.DescendantNodes()
