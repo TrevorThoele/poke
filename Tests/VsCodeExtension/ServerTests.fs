@@ -132,8 +132,8 @@ let ``server responds with content when requesting textDocument/hover`` () = asy
     initializeOutput.Should().NotBeNull("", []) |> ignore
 
     inputWriter.Write(prependContentLength(Requests.textDocumentHover()))
-    let initializedOutput = readOutput(outputReader)
-    initializedOutput.Should().Be(@"{""jsonrpc"":""2.0"",""id"":10,""result"":null}", "", []) |> ignore
+    let hoverOutput = readOutput(outputReader)
+    hoverOutput.Should().Be(@"{""jsonrpc"":""2.0"",""id"":10,""result"":{""contents"":""Hello world""}}", "", []) |> ignore
 
     inputWriter.Write(prependContentLength(Requests.shutdown()))
     inputWriter.Write(prependContentLength(Requests.exit()))
