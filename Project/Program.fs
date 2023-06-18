@@ -36,14 +36,19 @@ let basicStateSpace(check: string) =
 let examinableMember(symbol: ISymbol): bool =
     not(symbol :? IMethodSymbol) && not(symbol :? IPropertySymbol)
 
+let enumStateSpace(symbol: INamedTypeSymbol): bigint =
+    let caseCount = symbol.GetMembers() |> Seq.filter(examinableMember) |> Seq.length
+    (if caseCount = 0 then 1 else caseCount) |> bigint
+
 let rec declaredStateSpace(symbol: ISymbol, model: SemanticModel): bigint =
     match symbol with
     | :? IArrayTypeSymbol as array -> declaredStateSpace(array.ElementType, model)
     | :? ILocalSymbol as local -> declaredStateSpace(local.Type, model)
     | :? IFieldSymbol as field -> declaredStateSpace(field.Type, model)
     | :? INamedTypeSymbol as namedType ->
-        match namedType.SpecialType with
-        | SpecialType.None -> ((bigint(1), namedType.GetMembers() |> Seq.filter(examinableMember) |> Seq.append([namedType.BaseType :> ISymbol]))
+        match (namedType.TypeKind, namedType.SpecialType) with
+        | (TypeKind.Enum, _) -> enumStateSpace(namedType)
+        | (_, SpecialType.None) -> ((bigint(1), namedType.GetMembers() |> Seq.filter(examinableMember) |> Seq.append([namedType.BaseType :> ISymbol]))
             ||> Seq.fold(fun accumulator x ->
                 accumulator * declaredStateSpace(x, model)))
         | _ -> basicStateSpace(symbol.ToString())
@@ -65,6 +70,9 @@ let classes(node: SyntaxNode) =
 
 let structs(node: SyntaxNode) =
     typedDescendentNodes<StructDeclarationSyntax>(node)
+
+let enums(node: SyntaxNode) =
+    typedDescendentNodes<EnumDeclarationSyntax>(node)
 
 let assignments(node: SyntaxNode) =
     typedDescendentNodes<AssignmentExpressionSyntax>(node)

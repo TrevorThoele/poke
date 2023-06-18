@@ -295,8 +295,27 @@ let structScenarios: obj [] list =
 let ``struct has correct state space`` (text: string, expectedResult: bigint) =
     let source = parseSource(text)
 
-    let ``class`` = (structs(source.Root)
+    let ``struct`` = (structs(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "Struct"))
-    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``), source.Model)
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``struct``), source.Model)
+    
+    result.Should().Be(expectedResult, "", [])
+
+let enumScenarios: obj [] list =
+    [
+        [|"enum Enum {}"; bigint.Parse("1")|]
+        [|"enum Enum { One }"; bigint.Parse("1")|]
+        [|"enum Enum { One, Two }"; bigint.Parse("2")|]
+        [|"enum Enum { One, Two, Three }"; bigint.Parse("3")|]
+    ]
+
+[<Theory>]
+[<MemberData(nameof(enumScenarios))>]
+let ``enum has correct state space`` (text: string, expectedResult: bigint) =
+    let source = parseSource(text)
+
+    let enum = (enums(source.Root)
+        |> Seq.find(fun x -> x.Identifier.ToString() = "Enum"))
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(enum), source.Model)
     
     result.Should().Be(expectedResult, "", [])
