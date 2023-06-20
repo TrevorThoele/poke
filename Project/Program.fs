@@ -4,6 +4,10 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open System
+open Microsoft.CodeAnalysis.FindSymbols
+open Microsoft.CodeAnalysis.MSBuild
+open Microsoft.Build.Locator
+open Microsoft.CodeAnalysis.Text
 
 type FunctionStateSpace = {
     Domain: bigint
@@ -13,6 +17,15 @@ type FunctionStateSpace = {
 type Source = {
     Root: CompilationUnitSyntax
     Model: SemanticModel
+}
+
+type Analyzed = {
+    Symbol: ISymbol
+    StateSpace: bigint
+}
+
+type Analysis = {
+    mutable Symbols: Analyzed seq
 }
 
 let basicStateSpace(check: string) =
@@ -67,6 +80,25 @@ let rec declaredStateSpace(symbol: ISymbol, model: SemanticModel): bigint =
             (bigint(1), false)
     stateSpace + if isNullable then bigint(1) else bigint(0)
 
+let parseSource(text: string) =
+    let syntaxTree = CSharpSyntaxTree.ParseText(text)
+    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
+    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
+    let model = compilation.GetSemanticModel(syntaxTree, false)
+    let root = model.SyntaxTree.GetCompilationUnitRoot()
+    {
+        Root = root;
+        Model = model
+    }
+
+let instantiatedStateSpace(node: SyntaxNode) =
+    match node with
+    | :? VariableDeclaratorSyntax as variableDeclarator ->
+        match variableDeclarator.Initializer.Value with
+        | :? LiteralExpressionSyntax -> bigint(1)
+        | _ -> bigint(0)
+    | _ -> bigint(0)
+
 let private typedDescendentNodes<'T when 'T :> SyntaxNode>(node: SyntaxNode): seq<'T> =
     node.DescendantNodes()
         |> Seq.filter(fun x -> x :? 'T)
@@ -90,6 +122,9 @@ let enums(node: SyntaxNode) =
 let assignments(node: SyntaxNode) =
     typedDescendentNodes<AssignmentExpressionSyntax>(node)
 
+let variableDeclarations(node: SyntaxNode) =
+    typedDescendentNodes<VariableDeclarationSyntax>(node)
+
 let localFunctions(node: SyntaxNode) =
     typedDescendentNodes<LocalFunctionStatementSyntax>(node)
 
@@ -112,14 +147,3 @@ let declaredFunctionStateSpace(syntax: LocalFunctionStatementSyntax, model: Sema
             accumulator * declaredStateSpace(model.GetSymbolInfo(x.Type).Symbol, model)))
     Codomain = declaredStateSpace(model.GetSymbolInfo(syntax.ReturnType).Symbol, model)
 }
-
-let parseSource(text: string) =
-    let syntaxTree = CSharpSyntaxTree.ParseText(text)
-    let mscorlib = MetadataReference.CreateFromFile(typedefof<int>.Assembly.Location)
-    let compilation = CSharpCompilation.Create("MyCompilation", [syntaxTree], [mscorlib])
-    let model = compilation.GetSemanticModel(syntaxTree, false)
-    let root = model.SyntaxTree.GetCompilationUnitRoot()
-    {
-        Root = root;
-        Model = model
-    }
