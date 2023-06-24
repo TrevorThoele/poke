@@ -29,6 +29,17 @@
                 "searchNuGetOrgSymbolServer": true,
                 "cachePath": "C:/symbols",
             }
-        }
+        },
+        {
+			"name": "Run Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/VsCodeExtension/Client"
+			],
+			"outFiles": [
+				"${workspaceFolder}/VsCodeExtension/Client/*.js"
+			],
+		},
     ]
 }

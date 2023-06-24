@@ -493,7 +493,7 @@ let initialized() = @"{""jsonrpc"":""2.0"",""method"":""initialized"",""params""
 
 let textDocumentDocumentSymbol() = @"{""jsonrpc"":""2.0"",""method"":""textDocument/documentSymbol"",""id"":1}"
 
-let textDocumentHover() = @"{""jsonrpc"":""2.0"",""method"":""textDocument/hover"",""params"":{""position"":{""line"":0,""character"":0},""textDocument"":{""uri"":""source://src/main/scala/Address.scala""}},""id"":10}"
+let textDocumentHover(solutionPath: string) = @$"{{""jsonrpc"":""2.0"",""method"":""textDocument/hover"",""params"":{{""position"":{{""line"":0,""character"":0}},""position"":{{""line"":4,""character"":26}},""textDocument"":{{""uri"":""file:///{solutionPath.Replace('\\', '/')}/Basic/Program.cs""}}}},""id"":10}}"
 
 let shutdown() = @"{""jsonrpc"":""2.0"",""method"":""shutdown"",""id"":1}}"
 
