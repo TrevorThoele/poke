@@ -10,25 +10,25 @@ open Microsoft.CodeAnalysis.FindSymbols
 
 let literalAssignmentScenarios: obj [] list =
     [
-        [|"bool value = true;"; 5; bigint.Parse("1")|]
-        [|"bool value = false;"; 5; bigint.Parse("1")|]
-        [|"char value = 'a';"; 5; bigint.Parse("1")|]
-        [|"sbyte value = 1;"; 6; bigint.Parse("1")|]
-        [|"byte value = 2;"; 5; bigint.Parse("1")|]
-        [|"short value = 3;"; 6; bigint.Parse("1")|]
-        [|"ushort value = 4;"; 7; bigint.Parse("1")|]
-        [|"int value = 5;"; 4; bigint.Parse("1")|]
-        [|"uint value = 6;"; 5; bigint.Parse("1")|]
-        [|"float value = 7;"; 6; bigint.Parse("1")|]
-        [|"long value = 8;"; 5; bigint.Parse("1")|]
-        [|"ulong value = 9;"; 6; bigint.Parse("1")|]
-        [|"double value = 10;"; 7; bigint.Parse("1")|]
-        [|"decimal value = 11;"; 8; bigint.Parse("1")|]
+        [|"bool value = true;"; 5|]
+        [|"bool value = false;"; 5|]
+        [|"char value = 'a';"; 5|]
+        [|"sbyte value = 1;"; 6|]
+        [|"byte value = 2;"; 5|]
+        [|"short value = 3;"; 6|]
+        [|"ushort value = 4;"; 7|]
+        [|"int value = 5;"; 4|]
+        [|"uint value = 6;"; 5|]
+        [|"float value = 7;"; 6|]
+        [|"long value = 8;"; 5|]
+        [|"ulong value = 9;"; 6|]
+        [|"double value = 10;"; 7|]
+        [|"decimal value = 11;"; 8|]
     ]
 
 [<Theory>]
 [<MemberData(nameof(literalAssignmentScenarios))>]
-let ``literal assignment has correct state space`` (text: string, position: int, expectedResult: bigint) = async {
+let ``literal assignment has state space of 1`` (text: string, position: int) = async {
     if (not MSBuildLocator.IsRegistered) then MSBuildLocator.RegisterDefaults() |> ignore
     let workspace = new AdhocWorkspace()
     let projectInfo = ProjectInfo.Create(
@@ -36,9 +36,46 @@ let ``literal assignment has correct state space`` (text: string, position: int,
     let project = workspace.AddProject(projectInfo)
     let document = workspace.AddDocument(project.Id, "File.cs", SourceText.From(text))
     
+    let! semanticModel = document.GetSemanticModelAsync() |> Async.AwaitTask
     let! symbol = SymbolFinder.FindSymbolAtPositionAsync(document, position) |> Async.AwaitTask
-    let firstLocation = symbol.Locations |> Seq.head
-    let node = firstLocation.SourceTree.GetRoot().FindNode(firstLocation.SourceSpan)
-    let result = instantiatedStateSpace(node)
-    result.Should().Be(expectedResult, "", []) |> ignore
+    let node = toSyntaxNode(symbol)
+
+    let result = instantiatedStateSpace(node, semanticModel)
+    result.Should().Be(bigint(1), "", []) |> ignore
+}
+
+let transitiveAssignmentToLiteralScenarios: obj [] list =
+    [
+        [|"bool value = true; var otherValue = value;"; 23|]
+        [|"bool value = false; var otherValue = value;"; 24|]
+        [|"char value = 'a'; var otherValue = value;"; 22|]
+        [|"sbyte value = 1; var otherValue = value;"; 21|]
+        [|"byte value = 2; var otherValue = value;"; 20|]
+        [|"short value = 3; var otherValue = value;"; 21|]
+        [|"ushort value = 4; var otherValue = value;"; 22|]
+        [|"int value = 5; var otherValue = value;"; 19|]
+        [|"uint value = 6; var otherValue = value;"; 20|]
+        [|"float value = 7; var otherValue = value;"; 21|]
+        [|"long value = 8; var otherValue = value;"; 29|]
+        [|"ulong value = 9; var otherValue = value;"; 21|]
+        [|"double value = 10; var otherValue = value;"; 23|]
+        [|"decimal value = 11; var otherValue = value;"; 24|]
+    ]
+
+[<Theory>]
+[<MemberData(nameof(transitiveAssignmentToLiteralScenarios))>]
+let ``transitive assignment to literal has state space of 1`` (text: string, position: int) = async {
+    if (not MSBuildLocator.IsRegistered) then MSBuildLocator.RegisterDefaults() |> ignore
+    let workspace = new AdhocWorkspace()
+    let projectInfo = ProjectInfo.Create(
+        ProjectId.CreateNewId(), VersionStamp.Create(), "TestProject", "TestProject", LanguageNames.CSharp)
+    let project = workspace.AddProject(projectInfo)
+    let document = workspace.AddDocument(project.Id, "File.cs", SourceText.From(text))
+    
+    let! semanticModel = document.GetSemanticModelAsync() |> Async.AwaitTask
+    let! symbol = SymbolFinder.FindSymbolAtPositionAsync(document, position) |> Async.AwaitTask
+    let node = toSyntaxNode(symbol)
+    
+    let result = instantiatedStateSpace(node, semanticModel)
+    result.Should().Be(bigint(1), "", []) |> ignore
 }

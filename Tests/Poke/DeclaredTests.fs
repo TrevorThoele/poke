@@ -32,7 +32,7 @@ let ``variable has correct state space`` (text: string, expectedResult: bigint) 
     let valueVariable = (variables(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "value"))
 
-    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(valueVariable), source.Model)
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(valueVariable))
     result.Should().Be(expectedResult, "", [])
 
 let functionDomainScenarios: obj [] list =
@@ -230,7 +230,7 @@ let ``class has correct state space`` (text: string, expectedResult: bigint) =
 
     let ``class`` = (classes(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "Class"))
-    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``), source.Model)
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``))
     
     result.Should().Be(expectedResult, "", [])
 
@@ -240,7 +240,7 @@ let ``many base classes result in correct state space`` () =
 
     let ``class`` = (classes(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "Class"))
-    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``), source.Model)
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``class``))
     
     result.Should().Be(bigint.Parse("513"), "", [])
 
@@ -305,7 +305,7 @@ let ``struct has correct state space`` (text: string, expectedResult: bigint) =
 
     let ``struct`` = (structs(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "Struct"))
-    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``struct``), source.Model)
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(``struct``))
     
     result.Should().Be(expectedResult, "", [])
 
@@ -324,6 +324,6 @@ let ``enum has correct state space`` (text: string, expectedResult: bigint) =
 
     let enum = (enums(source.Root)
         |> Seq.find(fun x -> x.Identifier.ToString() = "Enum"))
-    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(enum), source.Model)
+    let result = declaredStateSpace(source.Model.GetDeclaredSymbol(enum))
     
     result.Should().Be(expectedResult, "", [])
