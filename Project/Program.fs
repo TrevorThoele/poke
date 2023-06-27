@@ -97,13 +97,17 @@ let parseSource(text: string) =
 
 let rec instantiatedStateSpace(node: SyntaxNode, model: SemanticModel) =
     match node with
+    | :? LiteralExpressionSyntax ->
+        bigint(1)
+    | :? IdentifierNameSyntax as identifierName ->
+        instantiatedStateSpace(toSyntaxNode(model.GetSymbolInfo(identifierName).Symbol), model)
+    | :? ObjectCreationExpressionSyntax as objectCreationExpression ->
+        (bigint(1), objectCreationExpression.ArgumentList.Arguments)
+            ||> Seq.fold(fun total x -> total * instantiatedStateSpace(x, model))
     | :? VariableDeclaratorSyntax as variableDeclarator ->
-        match variableDeclarator.Initializer.Value with
-        | :? LiteralExpressionSyntax ->
-            bigint(1)
-        | :? IdentifierNameSyntax as identifierName ->
-            instantiatedStateSpace(toSyntaxNode(model.GetSymbolInfo(identifierName).Symbol), model)
-        | _ -> bigint(0)
+        instantiatedStateSpace(variableDeclarator.Initializer.Value, model)
+    | :? ArgumentSyntax as argument ->
+        instantiatedStateSpace(argument.Expression, model)
     | _ -> bigint(0)
 
 let private typedDescendentNodes<'T when 'T :> SyntaxNode>(node: SyntaxNode): seq<'T> =
