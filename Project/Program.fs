@@ -28,6 +28,10 @@ type Analysis = {
     mutable Symbols: Analyzed seq
 }
 
+let toSyntaxNode(symbol: ISymbol) =
+    let syntaxReference = symbol.DeclaringSyntaxReferences |> Seq.head
+    syntaxReference.GetSyntax()
+
 let basicStateSpace(check: string) =
     match check with
     | "bool" -> bigint(2)
@@ -58,21 +62,21 @@ let enumStateSpace(symbol: INamedTypeSymbol): bigint =
     let caseCount = symbol.GetMembers() |> Seq.filter(examinableMember) |> Seq.length
     (if caseCount = 0 then 1 else caseCount) |> bigint
 
-let rec declaredStateSpace(symbol: ISymbol, model: SemanticModel): bigint =
+let rec declaredStateSpace(symbol: ISymbol): bigint =
     let (stateSpace, isNullable) =
         match symbol with
         | :? IArrayTypeSymbol as array ->
-            (declaredStateSpace(array.ElementType, model), false)
+            (declaredStateSpace(array.ElementType), false)
         | :? ILocalSymbol as local ->
-            (declaredStateSpace(local.Type, model), false)
+            (declaredStateSpace(local.Type), false)
         | :? IFieldSymbol as field ->
-            (declaredStateSpace(field.Type, model), false)
+            (declaredStateSpace(field.Type), false)
         | :? INamedTypeSymbol as namedType ->
             match (namedType.TypeKind, namedType.SpecialType) with
             | (TypeKind.Enum, _) ->
                 (enumStateSpace(namedType), false)
             | (_, SpecialType.None) -> (
-                ((bigint(1), classMembers(namedType)) ||> Seq.fold(fun total x -> total * declaredStateSpace(x, model))),
+                ((bigint(1), classMembers(namedType)) ||> Seq.fold(fun total x -> total * declaredStateSpace(x))),
                 namedType.IsReferenceType)
             | _ ->
                 (basicStateSpace(symbol.ToString()), false)
@@ -91,12 +95,19 @@ let parseSource(text: string) =
         Model = model
     }
 
-let instantiatedStateSpace(node: SyntaxNode) =
+let rec instantiatedStateSpace(node: SyntaxNode, model: SemanticModel) =
     match node with
+    | :? LiteralExpressionSyntax ->
+        bigint(1)
+    | :? IdentifierNameSyntax as identifierName ->
+        instantiatedStateSpace(toSyntaxNode(model.GetSymbolInfo(identifierName).Symbol), model)
+    | :? ObjectCreationExpressionSyntax as objectCreationExpression ->
+        (bigint(1), objectCreationExpression.ArgumentList.Arguments)
+            ||> Seq.fold(fun total x -> total * instantiatedStateSpace(x, model))
     | :? VariableDeclaratorSyntax as variableDeclarator ->
-        match variableDeclarator.Initializer.Value with
-        | :? LiteralExpressionSyntax -> bigint(1)
-        | _ -> bigint(0)
+        instantiatedStateSpace(variableDeclarator.Initializer.Value, model)
+    | :? ArgumentSyntax as argument ->
+        instantiatedStateSpace(argument.Expression, model)
     | _ -> bigint(0)
 
 let private typedDescendentNodes<'T when 'T :> SyntaxNode>(node: SyntaxNode): seq<'T> =
@@ -144,6 +155,6 @@ let accessedExternalVariables(node: SyntaxNode, model: SemanticModel) =
 let declaredFunctionStateSpace(syntax: LocalFunctionStatementSyntax, model: SemanticModel): FunctionStateSpace = {
     Domain = ((bigint(1), syntax.ParameterList.Parameters)
         ||> Seq.fold(fun accumulator x ->
-            accumulator * declaredStateSpace(model.GetSymbolInfo(x.Type).Symbol, model)))
-    Codomain = declaredStateSpace(model.GetSymbolInfo(syntax.ReturnType).Symbol, model)
+            accumulator * declaredStateSpace(model.GetSymbolInfo(x.Type).Symbol)))
+    Codomain = declaredStateSpace(model.GetSymbolInfo(syntax.ReturnType).Symbol)
 }
